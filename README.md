@@ -17,12 +17,12 @@ Readers are welcomed to fork this repository to reproduce the experiments and fo
     institution = {arXiv preprint arXiv:1801.02411},
     year={2018}
     }
-    
-We released related datasets: *yelp-200k*, *amazon-200k*, *yelp-50k* and *amazon-50k*. Any problems, you can create an issue. Note that the amazon dataset is provied by Prof. [Julian McAuley](http://cseweb.ucsd.edu/~jmcauley/), thus if you use this dataset for your paper, please cite the authors' paper as instructed in the website http://jmcauley.ucsd.edu/data/amazon/ 
+
+We released related datasets: *yelp-200k*, *amazon-200k*, *yelp-50k* and *amazon-50k*. Any problems, you can create an issue. Note that the amazon dataset is provided by Prof. [Julian McAuley](http://cseweb.ucsd.edu/~jmcauley/), thus if you use this dataset for your paper, please cite the authors' paper as instructed in the website http://jmcauley.ucsd.edu/data/amazon/ 
 
 ## Instructions
 
-For the sake of ease, a quick instruction is given for readers to reproduce the whole process on yelp-50k dataset. Note that the programs are testd on **Linux(CentOS release 6.9), Python 2.7 and Numpy 1.14.0 from Anaconda 4.3.6.**
+For the sake of ease, a quick instruction is given for readers to reproduce the whole process on yelp-50k dataset. Note that the programs are tested on **Linux(CentOS release 6.9), Python 2.7 and Numpy 1.14.0 from Anaconda 4.3.6.**
 
 ### Prerequisites
 
@@ -43,7 +43,8 @@ The arguments are explained in the following:
 One dependent lib is bottleneck, you may install it with "**pip install bottleneck**".
 
 ### Meta-graph Latent Features Generation.
-To generate the latent features by MF based on the simiarity matrices, run
+
+To generate the latent features by MF based on the similarity matrices, run
     
     python mf_features_generator.py yelp-50k all 1
 
@@ -57,11 +58,12 @@ Note that, to improve the computation efficiency, some modules are implements wi
 After the compiling, you will get two files in the project directory "setVal.so" and "partXY.so".
 
 ### FMG
+
 After obtain the latent features, then the readers can run FMG model as following:
     
     python run_exp.py config/yelp-50k.yaml -reg 0.5
 
-One may read the comment in files in directory config for more information.
+One may read the comment in files in directory `config` for more information.
 
 ## Misc
 If you have any questions about this project, **you can open issues**, thus it can help more people who are interested in this project.
