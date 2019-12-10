@@ -39,7 +39,7 @@ def save_lines(filename, res):
     fw = open(filename, 'w+')
     fw.write('\n'.join(res))
     fw.close()
-    print 'save %s lines in %s' % (len(res), filename)
+    print ('save %s lines in %s' % (len(res), filename))
 
 def save_triplets(filename, triplets, is_append=False):
     if is_append:
@@ -49,12 +49,12 @@ def save_triplets(filename, triplets, is_append=False):
         fw = open(filename, 'w+')
     fw.write('\n'.join(['%s\t%s\t%s' % (h,t,v) for h,t,v in triplets]))
     fw.close()
-    print 'save %s triplets in %s' % (len(triplets), filename)
+    print ('save %s triplets in %s' % (len(triplets), filename))
 
 def test_save_triplets():
     a = [(i,i**2, i**3) for i in range(10)]
     filename = 'log/test_appending_mode2.txt'
-    for ind in xrange(0, len(a), 3):
+    for ind in range(0, len(a), 3):
         tri = a[ind:ind+3]
         save_triplets(filename, tri, is_append=True)
 

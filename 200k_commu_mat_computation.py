@@ -6,7 +6,8 @@ from numba import jit
 import time
 import sys
 import os
-import cPickle as pickle
+# import cPickle as pickle
+import pickle   # in python3
 
 import numpy as np
 import bottleneck as bn
@@ -19,19 +20,19 @@ def get_topK_items(comm_res, ind2uid, ind2bid, topK=1000):
     start = time.time()
     U, _ = comm_res.shape
     triplets = []
-    for i in xrange(U):
+    for i in range(U):
         items = comm_res.getrow(i).toarray().flatten()
         cols = np.argpartition(-items, topK).flatten()[:topK]#descending order
         cols = [c for c in cols if items[c] > 0]#those less than 1000 non-zero entries, need to be removed zero ones
         triplets.extend([(ind2uid[i], ind2bid[c], items[c]) for c in cols])
     #logger.info('get topK items, total %s entries, cost %.2f seconds', len(triplets), time.time() - start)
-    print 'get top %s items, total %s entries, cost %.2f seconds' % (topK, len(triplets), time.time() - start)
+    print ('get top %s items, total %s entries, cost %.2f seconds' % (topK, len(triplets), time.time() - start))
     return triplets
 
 def batch_save_comm_res(path_str, wfilename, comm_res, ind2row, ind2col):
     coo = comm_res.tocoo(copy=False)
     step = 10000000
-    N = len(coo.row) / step
+    N = len(coo.row) // step
     for i in range(N+1):
         start_time = time.time()
         triplets = []
@@ -43,7 +44,7 @@ def batch_save_comm_res(path_str, wfilename, comm_res, ind2row, ind2col):
         for r, c, v in zip(rows, cols, vs):
             triplets.append((ind2row[r], ind2col[c], v))
         save_triplets(wfilename, triplets, is_append=True)
-        print 'finish saving 10M %s triplets in %s, progress: %s/%s, cost %.2f seconds' % (path_str, wfilename, (i+1) * step, len(coo.data), time.time() - start_time)
+        print ('finish saving 10M %s triplets in %s, progress: %s/%s, cost %.2f seconds' % (path_str, wfilename, (i+1) * step, len(coo.data), time.time() - start_time))
 
 def save_comm_res(path_str, filename, comm_res, ind2row, ind2col):
     triplets = []
@@ -58,7 +59,7 @@ def load_eids(eid_filename, type_):
     eid2ind = {v:k for k,v in enumerate(eids)}
     ind2eid = reverse_map(eid2ind)
     #logger.info('get %s %s from %s', len(eids), type_, eid_filename)
-    print 'get %s %s from %s' %(len(eids), type_, eid_filename)
+    print ('get %s %s from %s' %(len(eids), type_, eid_filename))
     return eids, eid2ind, ind2eid
 
 def get_bo(path_str, bid2ind):
@@ -88,7 +89,7 @@ def cal_comm_mat_UBB(path_str):
         in fact, only need to calculate BB
     '''
     uid_filename = dir_ + 'uids.txt'
-    print 'run cal_comm_mat_samples for 10k users in ', uid_filename
+    print ('run cal_comm_mat_samples for 10k users in ', uid_filename)
     lines = open(uid_filename, 'r').readlines()
     uids = [int(l.strip()) for l in lines]
     uid2ind = {v:k for k,v in enumerate(uids)}
@@ -110,15 +111,15 @@ def cal_comm_mat_UBB(path_str):
     comm_res = cal_mat_ubb(path_str, adj_ub, adj_bo, adj_bo_t)
 
     t2 = time.time()
-    print 'cal res of %s cost %2.f seconds' % (path_str, t2 - t1)
-    print 'comm_res shape=%s,densit=%s' % (comm_res.shape, comm_res.nnz * 1.0/comm_res.shape[0]/comm_res.shape[1])
+    print ('cal res of %s cost %2.f seconds' % (path_str, t2 - t1))
+    print ('comm_res shape=%s,densit=%s' % (comm_res.shape, comm_res.nnz * 1.0/comm_res.shape[0]/comm_res.shape[1]))
     K = 500
     wfilename = dir_ + 'sim_res/path_count/%s_top%s.res' % (path_str, K)
     triplets = get_topK_items(comm_res, ind2uid, ind2bid, topK=K)
     save_triplets(wfilename, triplets)
     #batch_save_comm_res(path_str, wfilename, comm_res, ind2uid, ind2bid)
     t3 = time.time()
-    print 'save res of %s cost %2.f seconds' % (path_str, t3 - t2)
+    print ('save res of %s cost %2.f seconds' % (path_str, t3 - t2))
 
 def cal_comm_mat_UUB(path_str, cikm=False):
     '''
@@ -131,7 +132,7 @@ def cal_comm_mat_UUB(path_str, cikm=False):
         rid_filename = dir_ + 'rids.txt'
         aid_filename = dir_ + 'aids.txt'
 
-    print 'cal commut mat for %s, filenames: %s, %s, %s' % (path_str, uid_filename, bid_filename, upb_filename)
+    print ('cal commut mat for %s, filenames: %s, %s, %s' % (path_str, uid_filename, bid_filename, upb_filename))
     uids, uid2ind, ind2uid = load_eids(uid_filename, 'user')
     bids, bid2ind, ind2bid = load_eids(bid_filename, 'biz')
     if not cikm:
@@ -144,14 +145,14 @@ def cal_comm_mat_UUB(path_str, cikm=False):
     if path_str == 'UPBUB':
         start = time.time()
         UBU = adj_upb.dot(adj_upb_t)
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str in ['UPBCatBUB', 'UPBCityBUB']:
         start = time.time()
         adj_bo, adj_bo_t = get_bo(path_str, bid2ind)
         UBO = adj_upb.dot(adj_bo)
         UBU = UBO.dot(UBO.transpose())
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str in ['UNBCatBUB', 'UNBCityBUB']:
         unb_filename = dir_ + 'uid_neg_bid.txt'
@@ -162,7 +163,7 @@ def cal_comm_mat_UUB(path_str, cikm=False):
         adj_bo, adj_bo_t = get_bo(path_str, bid2ind)
         UBO = adj_unb.dot(adj_bo)
         UBU = UBO.dot(UBO.transpose())
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str == 'UNBUB':
         unb_filename = dir_ + 'uid_neg_bid.txt'
@@ -171,7 +172,7 @@ def cal_comm_mat_UUB(path_str, cikm=False):
 
         start = time.time()
         UBU = adj_unb.dot(adj_unb_t)
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str == 'UUB':
         social_filename = dir_ + 'user_social.txt'
@@ -180,7 +181,7 @@ def cal_comm_mat_UUB(path_str, cikm=False):
 
         start = time.time()
         UBU = adj_uu.copy()
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str == 'UCompUB':
         uid_comp_filename = dir_ + 'uid_comp.txt'
@@ -192,7 +193,7 @@ def cal_comm_mat_UUB(path_str, cikm=False):
 
         start = time.time()
         UBU = adj_uc.dot(adj_uc_t)
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str == 'URPARUB':
         urpa_filename = dir_ + 'uid_rid_pos_aid.txt'
@@ -205,7 +206,7 @@ def cal_comm_mat_UUB(path_str, cikm=False):
         start = time.time()
         URA = adj_ur.dot(adj_ra)
         UBU = URA.dot(URA.transpose())#it should be URARU, here we use UBU for convenience
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     elif path_str == 'URNARUB':
         urpa_filename = dir_ + 'uid_rid_neg_aid.txt'
@@ -218,18 +219,18 @@ def cal_comm_mat_UUB(path_str, cikm=False):
         start = time.time()
         URA = adj_ur.dot(adj_ra)
         UBU = URA.dot(URA.transpose())#it should be URARU, here we use UBU for convenience
-        print 'UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start)
+        print ('UBU(%s), density=%.5f cost %.2f seconds' % (UBU.shape, UBU.nnz * 1.0/UBU.shape[0]/UBU.shape[1], time.time() - start))
 
     start = time.time()
     UBUB = UBU.dot(adj_upb)
-    print 'UBUB(%s), density=%.5f cost %.2f seconds' % (UBUB.shape, UBUB.nnz * 1.0/UBUB.shape[0]/UBUB.shape[1], time.time() - start)
+    print ('UBUB(%s), density=%.5f cost %.2f seconds' % (UBUB.shape, UBUB.nnz * 1.0/UBUB.shape[0]/UBUB.shape[1], time.time() - start))
     start = time.time()
     K = 500
     triplets = get_topK_items(UBUB, ind2uid, ind2bid, topK=K)
     wfilename = dir_ + 'sim_res/path_count/%s_top%s.res' % (path_str, K)
     save_triplets(wfilename, triplets)
     #save_comm_res(path_str, wfilename, UBUB, ind2uid, ind2bid)
-    print 'finish saving %s %s entries in %s, cost %.2f seconds' % (len(triplets), path_str, wfilename, time.time() - start)
+    print ('finish saving %s %s entries in %s, cost %.2f seconds' % (len(triplets), path_str, wfilename, time.time() - start))
 
 def cal_comm_mat_USUB(path_str):
     '''
@@ -243,7 +244,7 @@ def cal_comm_mat_USUB(path_str):
     rid_filename = dir_ + 'rids.txt'
     upb_filename = dir_ + 'uid_pos_bid.txt'
 
-    print 'cal commut mat for %s, filenames: %s, %s, %s' % (path_str, uid_filename, bid_filename, upb_filename)
+    print ('cal commut mat for %s, filenames: %s, %s, %s' % (path_str, uid_filename, bid_filename, upb_filename))
     uids, uid2ind, ind2uid = load_eids(uid_filename, 'user')
     bids, bid2ind, ind2bid = load_eids(bid_filename, 'biz')
     aids, aid2ind, ind2aid = load_eids(aid_filename, 'aspect')
@@ -280,31 +281,31 @@ def cal_comm_mat_USUB(path_str):
 
     start = time.time()
     RBR = adj_rb.dot(adj_rb_t)
-    print 'RBR(%s), density=%.5f cost %.2f seconds' % (RBR.shape, RBR.nnz * 1.0/RBR.shape[0]/RBR.shape[1], time.time() - start)
+    print ('RBR(%s), density=%.5f cost %.2f seconds' % (RBR.shape, RBR.nnz * 1.0/RBR.shape[0]/RBR.shape[1], time.time() - start))
     start = time.time()
     #RAR = adj_ra.dot(adj_ra_t)
     f = open(rar_mat_filename, 'r')
     RAR = pickle.load(f)
-    print 'load RAR(%s), density=%.5f cost %.2f seconds' % (RAR.shape, RAR.nnz * 1.0/RAR.shape[0]/RAR.shape[1], time.time() - start)
+    print ('load RAR(%s), density=%.5f cost %.2f seconds' % (RAR.shape, RAR.nnz * 1.0/RAR.shape[0]/RAR.shape[1], time.time() - start))
     start = time.time()
     RSR = RBR.multiply(RAR)
-    print 'RSR(%s), density=%.5f cost %.2f seconds' % (RSR.shape, RSR.nnz * 1.0/RSR.shape[0]/RSR.shape[1], time.time() - start)
+    print ('RSR(%s), density=%.5f cost %.2f seconds' % (RSR.shape, RSR.nnz * 1.0/RSR.shape[0]/RSR.shape[1], time.time() - start))
     start = time.time()
     URSR = adj_ur.dot(RSR)
-    print 'URSR(%s), density=%.5f cost %.2f seconds' % (URSR.shape, URSR.nnz * 1.0/URSR.shape[0]/URSR.shape[1], time.time() - start)
+    print ('URSR(%s), density=%.5f cost %.2f seconds' % (URSR.shape, URSR.nnz * 1.0/URSR.shape[0]/URSR.shape[1], time.time() - start))
     start = time.time()
     URSRU = URSR.dot(adj_ur_t)
-    print 'URSRU(%s), density=%.5f cost %.2f seconds' % (URSRU.shape, URSRU.nnz * 1.0/URSRU.shape[0]/URSRU.shape[1], time.time() - start)
+    print ('URSRU(%s), density=%.5f cost %.2f seconds' % (URSRU.shape, URSRU.nnz * 1.0/URSRU.shape[0]/URSRU.shape[1], time.time() - start))
 
     start = time.time()
     URSRUB = URSRU.dot(adj_upb)
-    print 'URSRUB(%s), density=%.5f cost %.2f seconds' % (URSRUB.shape, URSRUB.nnz * 1.0/URSRUB.shape[0]/URSRUB.shape[1], time.time() - start)
+    print ('URSRUB(%s), density=%.5f cost %.2f seconds' % (URSRUB.shape, URSRUB.nnz * 1.0/URSRUB.shape[0]/URSRUB.shape[1], time.time() - start))
     start = time.time()
     K = 500
     wfilename = dir_ + 'sim_res/path_count/%s_top%s.res' % (path_str, K)
     #wfilename = dir_ + 'sim_res/path_count/%s.res' % path_str
     batch_save_comm_res(path_str, wfilename, URSRUB, ind2uid, ind2bid)
-    print 'finish saving %s %s entries in %s, cost %.2f seconds' % (URSRUB.nnz, path_str, wfilename, time.time() - start)
+    print ('finish saving %s %s entries in %s, cost %.2f seconds' % (URSRUB.nnz, path_str, wfilename, time.time() - start))
 
 def cal_rar(path_str):
 
@@ -334,9 +335,9 @@ def cal_rar(path_str):
     t1 = time.time()
     RA = adj_ra.toarray()
     t2 = time.time()
-    print 'to dense RA%s cost %.2f seconds' % (RA.shape, t2 - t1)
+    print ('to dense RA%s cost %.2f seconds' % (RA.shape, t2 - t1))
     RAR_csr = cal_rar_block(RA, len(rid2ind), ind2rid, step=20000)
-    print 'finish cal rar by blocks, cost %.2f minutes' % ((time.time() - t2) / 60.0)
+    print ('finish cal rar by blocks, cost %.2f minutes' % ((time.time() - t2) / 60.0))
     try:
         wfilename = dir_ + 'sim_res/path_count/%s_spa_mat.pickle' % path_str
         fw = open(wfilename, 'w+')
@@ -344,9 +345,9 @@ def cal_rar(path_str):
         map_filename = dir_ + 'sim_res/path_count/%s_spa_mat_id_map.pickle' % path_str
         fw = open(map_filename, 'w+')
         pickle.dump(ind2rid, fw, pickle.HIGHEST_PROTOCOL)
-        print 'finish saving sparse mat in ', wfilename
+        print ('finish saving sparse mat in ', wfilename)
     except Exception as e:
-        print e
+        print (e)
 
 DEBUG = False
 def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
@@ -356,13 +357,13 @@ def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
         nR = 1005
         step, topK = 20, 10
         debug_RR = np.dot(RA, RA.T)
-        col_inds = bn.argpartsort(-debug_RR, topK, axis=1)[:,:topK]
+        col_inds = bn.argpartition(-debug_RR, topK, axis=1)[:,:topK]
         dr,dc = col_inds.shape
         row_inds = np.tile(np.arange(dr).reshape(dr,1), dc)
         debug_res = np.zeros((1005,1005))
         debug_res[row_inds, col_inds] = 1
 
-    step_num = RA.shape[0] / step
+    step_num = RA.shape[0] // step
     data, rows, cols = [],[],[]
     rar_start = time.time()
     for i in range(step_num+1):
@@ -384,7 +385,7 @@ def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
             drc = dot_res.shape[1]
             tmp_topK = topK if topK < drc else drc
 
-            top100_inds = bn.argpartsort(-dot_res, tmp_topK, axis=1)[:,:tmp_topK]#10000 * 100,100 indices of the top K weights, column indices in dot_res
+            top100_inds = bn.argpartition(-dot_res, tmp_topK, axis=1)[:,:tmp_topK]#10000 * 100,100 indices of the top K weights, column indices in dot_res
             br, bc = top100_inds.shape
             top100_rows = np.tile(np.arange(br).reshape(br,1), bc)#number of colums = colums of top100 inds, usually =100
 
@@ -395,11 +396,11 @@ def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
             b_top100_inds.append(top100_inds + c)#preserve the global indices, indices need to add the starting value of every block
 
         block_end = time.time()
-        print 'finish calculating %s-th/%s block(%s*%s), cost %.2f seconds, rar_block cost %.2f minutes' % (i+1, step_num, step, step, block_end - block_start, (block_end - rar_start) / 60.0)
+        print ('finish calculating %s-th/%s block(%s*%s), cost %.2f seconds, rar_block cost %.2f minutes' % (i+1, step_num, step, step, block_end - block_start, (block_end - rar_start) / 60.0))
         b_top100_inds = np.concatenate(b_top100_inds, axis=1)
         b_top100_res = np.concatenate(b_top100_res, axis=1)
 
-        top100_inds = bn.argpartsort(-b_top100_res, topK, axis=1)[:,:topK]#10000 * 100,100 indices of the top K weights
+        top100_inds = bn.argpartition(-b_top100_res, topK, axis=1)[:,:topK]#10000 * 100,100 indices of the top K weights
         tr, tc = top100_inds.shape
         #it may exists that not all 100 weights are zero, prob is very small, processing later
         top100_rows = np.tile(np.arange(tr).reshape(tr,1), tc)
@@ -417,7 +418,7 @@ def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
 
         triplets = []
         save_start = time.time()
-        print 'finish selecting top %s for block %s, cost %.2f seconds, rar_block cost %.2f minutes' % (topK, i+1, save_start - block_end, (save_start - rar_start) / 60.0)
+        print ('finish selecting top %s for block %s, cost %.2f seconds, rar_block cost %.2f minutes' % (topK, i+1, save_start - block_end, (save_start - rar_start) / 60.0))
         #for r, c in zip(global_row_inds, global_col_inds):
         #    triplets.append((ind2rid[r], ind2rid[c], 1))
         #filename = dir_ + 'sim_res/path_count/%s_block_res/%s.dat' % (i+1)
@@ -435,9 +436,9 @@ def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
         test = RAR_csr.toarray()
         test_res = (test == debug_res)
         if test_res.sum() == test.size:
-            print '!!!block matrix equals directly dot matrix, the res is correct!!!'
+            print ('!!!block matrix equals directly dot matrix, the res is correct!!!')
         else:
-            print 'two matrices are not equal, the res is wrong!!!'
+            print ('two matrices are not equal, the res is wrong!!!')
     # make it symmetryic
     RAR = 0.5 * (RAR_csr + RAR_csr.transpose())
     RAR = RAR.ceil()#0.5 to 1, 1 to 1
