@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/home/bob-lytton/venv/temp_model/bin/python"
+    // "python.pythonPath": "/home/bob-lytton/venv/temp_model/bin/activate"
+    "python.pythonPath": "/home1/lyt/venv/ONLSTM/bin/activate"  // in dlib server
 }
