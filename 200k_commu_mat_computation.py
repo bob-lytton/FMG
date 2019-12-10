@@ -112,7 +112,7 @@ def cal_comm_mat_UBB(path_str):
 
     t2 = time.time()
     print ('cal res of %s cost %2.f seconds' % (path_str, t2 - t1))
-    print ('comm_res shape=%s,densit=%s' % (comm_res.shape, comm_res.nnz * 1.0/comm_res.shape[0]/comm_res.shape[1]))
+    print ('comm_res shape=%s,density=%s' % (comm_res.shape, comm_res.nnz * 1.0/comm_res.shape[0]/comm_res.shape[1]))
     K = 500
     wfilename = dir_ + 'sim_res/path_count/%s_top%s.res' % (path_str, K)
     triplets = get_topK_items(comm_res, ind2uid, ind2bid, topK=K)
@@ -263,7 +263,8 @@ def cal_comm_mat_USUB(path_str):
         ind2rid_filename = dir_ + 'sim_res/path_count/%s_spa_mat_id_map.pickle' % path_str
         rar_mat_filename = dir_ + 'sim_res/path_count/%s_spa_mat.pickle' % path_str
 
-    f = open(ind2rid_filename, 'r')
+    # f = open(ind2rid_filename, 'r')
+    f = open(ind2rid_filename, 'rb')
     ind2rid = pickle.load(f)
     rid2ind = reverse_map(ind2rid)
 
@@ -284,7 +285,8 @@ def cal_comm_mat_USUB(path_str):
     print ('RBR(%s), density=%.5f cost %.2f seconds' % (RBR.shape, RBR.nnz * 1.0/RBR.shape[0]/RBR.shape[1], time.time() - start))
     start = time.time()
     #RAR = adj_ra.dot(adj_ra_t)
-    f = open(rar_mat_filename, 'r')
+    # f = open(rar_mat_filename, 'r')
+    f = open(rar_mat_filename, 'rb')
     RAR = pickle.load(f)
     print ('load RAR(%s), density=%.5f cost %.2f seconds' % (RAR.shape, RAR.nnz * 1.0/RAR.shape[0]/RAR.shape[1], time.time() - start))
     start = time.time()
@@ -338,14 +340,17 @@ def cal_rar(path_str):
     print ('to dense RA%s cost %.2f seconds' % (RA.shape, t2 - t1))
     RAR_csr = cal_rar_block(RA, len(rid2ind), ind2rid, step=20000)
     print ('finish cal rar by blocks, cost %.2f minutes' % ((time.time() - t2) / 60.0))
-    try:
+    try:    # TODO: this is the place where the unfound file should be generated.
+        # dir_: global str declared in cal_yelp_all
         wfilename = dir_ + 'sim_res/path_count/%s_spa_mat.pickle' % path_str
-        fw = open(wfilename, 'w+')
+        # fw = open(wfilename, 'w+')
+        fw = open(wfilename, 'w+b')
         pickle.dump(RAR_csr, fw, pickle.HIGHEST_PROTOCOL)
         map_filename = dir_ + 'sim_res/path_count/%s_spa_mat_id_map.pickle' % path_str
-        fw = open(map_filename, 'w+')
+        # fw = open(map_filename, 'w+')
+        fw = open(map_filename, 'w+b')
         pickle.dump(ind2rid, fw, pickle.HIGHEST_PROTOCOL)
-        print ('finish saving sparse mat in ', wfilename)
+        print ('*******finish saving sparse mat in ', wfilename, '********')
     except Exception as e:
         print (e)
 
@@ -461,6 +466,7 @@ def cal_yelp_all(split_num, dt):
         cal_comm_mat_USUB(path_str)
 
 if __name__ == '__main__':
+    print(sys.argv)
     if len(sys.argv) == 4:
         dt = sys.argv[1]
         path_str = sys.argv[2]
