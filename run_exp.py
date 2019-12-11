@@ -89,7 +89,7 @@ def init_exp_configs(config_filename):
     return config
 
 def run_glasso(config, data_loader):
-    print 'run fm glasso..., check the log in %s ...' % config.get('log_filename')
+    print ('run fm glasso..., check the log in %s ...' % config.get('log_filename'))
     logging.info('******\n%s\n******', config)
     run_start = time.time()
     fm_ak_gl = FMAKGL(config, data_loader)
@@ -146,10 +146,10 @@ def run():
     if config['exp_type'] in ['vary_reg', 'mp_vary_reg']:
         run_vary_reg(config, data_loader)
     if config['exp_type'] in ['vary_K', 'mp_vary_K']:
-        print 'run %s, check log in %s' % (config['exp_type'], config['log_filename'])
+        print ('run %s, check log in %s' % (config['exp_type'], config['log_filename']))
         run_vary_K(config, data_loader)
     if config['exp_type'] in ['vary_mg']:
-        print 'run %s, check log in %s' % (config['exp_type'], config['log_filename'])
+        print ('run %s, check log in %s' % (config['exp_type'], config['log_filename']))
         run_vary_mg(config)
 
 if __name__ == '__main__':

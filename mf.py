@@ -23,7 +23,7 @@ def print_cost(func):
     def wrapper(*args, **kwargs):
         t = time.time()
         res = func(*args, **kwargs)
-        print '%s: %.1fs' % (func.__name__, time.time() - t)
+        print ('%s: %.1fs' % (func.__name__, time.time() - t))
         return res
     return wrapper
 
@@ -119,7 +119,7 @@ class MF_BGD(object):
 
     def run(self):
         logger.info('MF running: parras: K=%s, reg=%s, lr=%s, silent_run=%s', self.K, self.lamb, self.eps, self.silent_run)
-        X = cm((self.data[:,2], (self.data[:,0], self.data[:,1]))) #index starting from 0
+        X = cm((self.data[:,2], (self.data[:,0].astype(np.int32), self.data[:,1].astype(np.int32)))) #index starting from 0
         M, N = X.shape
         omega = cm((self.train_data[:,2], (self.train_data[:,0], self.train_data[:,1])), shape=(M,N)) #index starting from 0
         if len(self.test_data):
@@ -225,7 +225,7 @@ def run_basedline(filename, K, eps, lamb, max_iter, silent_run=True):
     bid2iid = {v:k for k,v in enumerate(bids)}
     ratings[:,0] = [uid2iid[int(r)] for r in ratings[:,0]]
     ratings[:,1] = [bid2iid[int(r)] for r in ratings[:,1]]
-    print 'finish loading data, cost %.2f seconds, users: %s, items: %s, obs: %s, density=%.4f' % (time.time() - start_time, len(uids), len(bids), len(ratings), len(ratings) * 1.0 / len(uids) / len(bids))
+    print ('finish loading data, cost %.2f seconds, users: %s, items: %s, obs: %s, density=%.4f' % (time.time() - start_time, len(uids), len(bids), len(ratings), len(ratings) * 1.0 / len(uids) / len(bids)))
 
     rand_inds = np.random.permutation(ratings.shape[0])
     train_num = int(ratings.shape[0] * 0.8)
@@ -280,7 +280,7 @@ def run_5_validations(rating_filename, K, eps, lamb, max_iter, silent_run=True):
 
 def grid_search(filename):
     #filenames = ['ratings_filter5.txt',]
-    print 'grid search for %s' % filename
+    print ('grid search for %s' % filename)
     Ks = [10,20,30,40,50]
     epss = [0.001, 0.01, 0.1, 1, 10, 100]
     lambs = [0.01,0.1,1,5,10, 100]
@@ -312,7 +312,7 @@ if __name__ == '__main__':
             exp_rmses = []
             for i in range(1):
                 exp_rmses.append(run_basedline(filename, K, eps, lamb, max_iter, silent_run=False))
-            print 'K=%s,eps=%s,lamb=%s,max_iter=%s, exp_rmses=%s,avg_rmse=%s' % (K,eps,lamb,max_iter, exp_rmses, np.mean(exp_rmses))
+            print ('K=%s,eps=%s,lamb=%s,max_iter=%s, exp_rmses=%s,avg_rmse=%s' % (K,eps,lamb,max_iter, exp_rmses, np.mean(exp_rmses)))
         elif int(sys.argv[2]) == 2:
             filename = dir_ + 'ratings.txt'
             K = 10

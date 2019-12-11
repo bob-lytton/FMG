@@ -41,10 +41,10 @@ def run(path_str, comb='', K=10):
     data[:,0] = [uid2ind[int(r)] for r in data[:,0]]
     data[:,1] = [bid2ind[int(r)] for r in data[:,1]]
 
-    print 'finish load data from %s, cost %.2f seconds, users: %s, items=%s' % (sim_filename, time.time() - start_time, len(uids), len(bids))
+    print ('finish load data from %s, cost %.2f seconds, users: %s, items=%s' % (sim_filename, time.time() - start_time, len(uids), len(bids)))
 
     eps, lamb, iters = 10, 10, 500
-    print 'start generate mf features, (K, eps, reg, iters) = (%s, %s, %s, %s)' % (K, eps, lamb, iters)
+    print ('start generate mf features, (K, eps, reg, iters) = (%s, %s, %s, %s)' % (K, eps, lamb, iters))
     mf = MF(data=data, train_data=data, test_data=[], K=K, eps=eps, lamb=lamb, max_iter=iters, call_logger=logger)
     U,V = mf.run()
     start_time = time.time()
@@ -65,7 +65,7 @@ def run(path_str, comb='', K=10):
 
     fw.write('\n'.join(res))
     fw.close()
-    print 'User-Features: %s saved in %s, cost %.2f seconds' % (U.shape, wfilename, time.time() - start_time)
+    print ('User-Features: %s saved in %s, cost %.2f seconds' % (U.shape, wfilename, time.time() - start_time))
 
     start_time = time.time()
     wfilename = dir_ + 'mf_features/path_count/%s_item.dat' % (path_str)
@@ -84,7 +84,7 @@ def run(path_str, comb='', K=10):
 
     fw.write('\n'.join(res))
     fw.close()
-    print 'Item-Features: %s  saved in %s, cost %.2f seconds' % (V.shape, wfilename, time.time() - start_time)
+    print ('Item-Features: %s  saved in %s, cost %.2f seconds' % (V.shape, wfilename, time.time() - start_time))
 
 def run_all_yelp():
     for path_str in ['UPBCatB','UPBCityB', 'UPBStateB', 'UPBStarsB']:
@@ -99,7 +99,7 @@ def run_all_yelp():
 def run_all_yelp_by_rank():
     for K in [2,3,5,20,30,40,50,100]:
         start = time.time()
-        print 'process rank ', K
+        print ('process rank ', K)
         for path_str in ['UPBCatB','UPBCityB', 'UPBStateB', 'UPBStarsB']:
             run(path_str, K=K)
         for path_str in ['UPBUB', 'UNBUB', 'URPARUB', 'URNARUB', 'UUB']:
@@ -108,12 +108,12 @@ def run_all_yelp_by_rank():
             run(path_str, K=K)
         for path_str in ['ratings_only']:
             run(path_str, K=K)
-        print 'finish processing rank %s, cost %.2fm ' % (K, (time.time() - start) / 60.0)
+        print ('finish processing rank %s, cost %.2fm ' % (K, (time.time() - start) / 60.0))
 
 def run_all_amazon_by_rank():
     for K in [2,3,5,20,30,40,50,100]:
         start = time.time()
-        print 'process rank ', K
+        print ('process rank ', K)
         for path_str in ['UPBCatB','UPBBrandB']:
             run(path_str, K=K)
         for path_str in ['UPBUB', 'UNBUB', 'URPARUB', 'URNARUB']:
@@ -122,7 +122,7 @@ def run_all_amazon_by_rank():
             run(path_str, K=K)
         #for path_str in ['ratings_only']:
         #    run(path_str, K=K)
-        print 'finish processing rank %s, cost %.2fm ' % (K, (time.time() - start) / 60.0)
+        print ('finish processing rank %s, cost %.2fm ' % (K, (time.time() - start) / 60.0))
 
 def run_all_amazon_200k(ratings_only=False):
     if ratings_only:
@@ -143,10 +143,10 @@ def run_amazon_200k_combs():
     cnt = 1
     for path_str in path_strs:
         for comb in combs:
-            print 'start processing %s_%s, cnt=%s' % (path_str, comb, cnt)
+            print ('start processing %s_%s, cnt=%s' % (path_str, comb, cnt))
             cnt += 1
             run(path_str, comb)
-            print 'finish processing %s_%s, cnt=%s' % (path_str, comb, cnt)
+            print ('finish processing %s_%s, cnt=%s' % (path_str, comb, cnt))
 
 if __name__ == '__main__':
     global dir_
@@ -158,7 +158,7 @@ if __name__ == '__main__':
         log_filename = 'log/%s_mf_feature_geneartion_%s_split%s.log' % (dt, path_str, split_num)
         exp_id = int(time.time())
         logger = init_logger('exp_%s' % exp_id, log_filename, logging.INFO, False)
-        print 'data: %s, path_str: %s' % (dir_, path_str)
+        print ('data: %s, path_str: %s' % (dir_, path_str))
         logger.info('data: %s, path_str: %s', dir_, path_str)
         if path_str == 'all':
             if 'yelp' in dt:
@@ -178,6 +178,6 @@ if __name__ == '__main__':
         else:
             run(path_str)
     else:
-        print 'please speficy the data and path_str'
+        print ('please speficy the data and path_str')
         sys.exit(0)
 

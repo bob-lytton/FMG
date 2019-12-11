@@ -58,8 +58,8 @@ class DataLoader(object):
 
         ind = 0
         for u, b, _ in test_data:
-            ur = uid2reps.get(int(u), np.zeros(self.N/2))
-            br = bid2reps.get(int(b), np.zeros(self.N/2))
+            ur = uid2reps.get(int(u), np.zeros(self.N//2))
+            br = bid2reps.get(int(b), np.zeros(self.N//2))
             self.test_X[ind] = np.concatenate((ur,br))
             ind += 1
 
@@ -83,7 +83,7 @@ class DataLoader(object):
             load user and item latent features generate by MF for every meta-graph
         '''
         #if dt in ['yelp-200k', 'amazon-200k', 'amazon-50k', 'amazon-100k', 'amazon-10k', 'amazon-5k', 'cikm-yelp', 'yelp-50k', 'yelp-10k', 'yelp-5k', 'yelp-100k', 'douban']:
-        fnum = self.N / 2
+        fnum = self.N // 2
         ufilename = self.data_dir + 'uids.txt'
         bfilename = self.data_dir + 'bids.txt'
         uids = [int(l.strip()) for l in open(ufilename, 'r').readlines()]
