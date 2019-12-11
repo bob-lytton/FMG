@@ -154,3 +154,13 @@ def run():
 
 if __name__ == '__main__':
     run()
+    # in yelp-50k.yaml:
+    # exp_type: vary_reg
+    # goto run_vary_reg()
+    #       change reg_P,reg_Q,reg_W, use different configurations to train
+    #       goto run_glasso
+    #           goto FMAKGL.train, the data_loader is the argument transported here
+    #               Use root-mean-square-error (RMSE) as metric
+    #               self.solver = nmAPG
+    #               goto self._block_nonmono_acc_proximal_gradient_descent(W, P)
+    #                   training
