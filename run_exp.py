@@ -165,11 +165,21 @@ if __name__ == '__main__':
     #               self.solver = nmAPG
     #               goto self._block_nonmono_acc_proximal_gradient_descent(W, P)
     #                   training
-
+    #
     # `config` is in cmd-args
     # it need a txt file in DataLoader._load(), but what we generated is a pickle file, so we need to change this.
     # the train_X, train_Y, test_X, test_Y
     # need to know what is in train_X, train_Y.
     # train_Y is from data/%s/exp_split/%s/ratings_train_%s.txt, the third column
-    # train_X is built by mf_features, each element contains a matrix with 
-    # config['N'] = L*F*2, L for number of metagraphs
+    # train_X is built by mf_features, each element contains a matrix with train_num*N, train_num = data.shape[0] 
+    # input from train_X: (embedU, embedB); input from train_Y: ratings given by users to items
+    # config['N'] = L*F*2, L for number of metagraphs, F for embedding dimensions
+    # the '.res' files are 'row, col, commuting_mat[row][col]'
+
+    # user-business metapaths 
+    # do MF and FM on different adj matrices
+    # U 1w, B 1w, City 200, Cate 50
+
+    # commuting matrix
+    # metapaths: UB, UUB, UBUB, UBCaB (need), UBCiB (need)
+    # 

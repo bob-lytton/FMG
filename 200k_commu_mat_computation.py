@@ -245,7 +245,7 @@ def cal_comm_mat_USUB(path_str):
     upb_filename = dir_ + 'uid_pos_bid.txt'
 
     print ('cal commut mat for %s, filenames: %s, %s, %s' % (path_str, uid_filename, bid_filename, upb_filename))
-    uids, uid2ind, ind2uid = load_eids(uid_filename, 'user')
+    uids, uid2ind, ind2uid = load_eids(uid_filename, 'user')    # ind for line number
     bids, bid2ind, ind2bid = load_eids(bid_filename, 'biz')
     aids, aid2ind, ind2aid = load_eids(aid_filename, 'aspect')
 
@@ -300,7 +300,7 @@ def cal_comm_mat_USUB(path_str):
     print ('URSRU(%s), density=%.5f cost %.2f seconds' % (URSRU.shape, URSRU.nnz * 1.0/URSRU.shape[0]/URSRU.shape[1], time.time() - start))
 
     start = time.time()
-    URSRUB = URSRU.dot(adj_upb)
+    URSRUB = URSRU.dot(adj_upb)     # the commuting matrix
     print ('URSRUB(%s), density=%.5f cost %.2f seconds' % (URSRUB.shape, URSRUB.nnz * 1.0/URSRUB.shape[0]/URSRUB.shape[1], time.time() - start))
     start = time.time()
     K = 500
@@ -424,19 +424,13 @@ def cal_rar_block(RA, nR, ind2rid, step=10000, topK=100):
         triplets = []
         save_start = time.time()
         print ('finish selecting top %s for block %s, cost %.2f seconds, rar_block cost %.2f minutes' % (topK, i+1, save_start - block_end, (save_start - rar_start) / 60.0))
-        #for r, c in zip(global_row_inds, global_col_inds):
-        #    triplets.append((ind2rid[r], ind2rid[c], 1))
-        #filename = dir_ + 'sim_res/path_count/%s_block_res/%s.dat' % (i+1)
-        #save_triplets(filename, triplets)
-        #save_end = time.time()
-        #print 'finish processing block %s, res saved in %s, %s triplets, cost detail(total/compute/select/save): %.2f/%.2f/%.2f/%.2f seconds ' % (i+1, filename, len(triplets), save_end - block_start, block_end - block_start, save_start - block_end, save_end - save_start)
+        
 
     data = np.ones(len(rows))#use one to replace the weights
 
     t4 = time.time()
     RAR_csr = csr((data, (rows, cols)), shape=[nR, nR])
     t5 = time.time()
-    #print '10000 res to sparse matrix(%s) cost %.2f seconds' % (RAR_csr.shape, t5 - t4)
     if DEBUG:
         test = RAR_csr.toarray()
         test_res = (test == debug_res)

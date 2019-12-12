@@ -8,3 +8,6 @@ log/*
 *pylints/*
 *test_scripts/*
 data
+yelp_dataset/adjs/*
+yelp_dataset/json/*
+yelp_dataset/rates/*

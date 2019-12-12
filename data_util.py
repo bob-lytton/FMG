@@ -68,6 +68,7 @@ class DataLoader(object):
 
         test_X_sparsity = np.count_nonzero(self.test_X) * 1.0 / self.test_X.size
 
+    # TODO: finish this function
     def _load_pickle(self):
         pass
 
