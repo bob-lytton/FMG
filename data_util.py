@@ -24,6 +24,8 @@ class DataLoader(object):
         self.L = config.get('L')
         if config.get('dt') == 'synthetic':
             self._load_random_data()
+        elif config.get('file_type') == 'pickle':
+            self._load_pickle()
         else:
             self._load()
 
@@ -34,6 +36,7 @@ class DataLoader(object):
         self.test_Y = np.loadtxt(self.data_dir + self.config.get('test_Y'))
 
     def _load(self):
+        # Needs modify to fit pickle file
         start_time = time.time()
 
         train_data = np.loadtxt(self.data_dir + self.train_filename)
@@ -50,9 +53,9 @@ class DataLoader(object):
 
         ind = 0
         for u, b, _ in train_data:
-            ur = uid2reps[int(u)]
-            br = bid2reps[int(b)]
-            self.train_X[ind] = np.concatenate((ur,br))
+            ur = uid2reps[int(u)]   # int(u) for uid, has a len(metapath)*10 vector
+            br = bid2reps[int(b)]   # int(b) for bid
+            self.train_X[ind] = np.concatenate((ur,br)) # concatenate (embed_u, embed_b), so each item in train_X is a long vector
             ind += 1
         X_sparsity = np.count_nonzero(self.train_X) * 1.0 / self.train_X.size
 
@@ -64,6 +67,9 @@ class DataLoader(object):
             ind += 1
 
         test_X_sparsity = np.count_nonzero(self.test_X) * 1.0 / self.test_X.size
+
+    def _load_pickle(self):
+        pass
 
     def _generate_feature_files(self):
         meta_graphs = self.config.get('meta_graphs')
@@ -89,19 +95,21 @@ class DataLoader(object):
         uids = [int(l.strip()) for l in open(ufilename, 'r').readlines()]
         uid2reps = {k:np.zeros(fnum, dtype=np.float64) for k in uids}
 
-        bids = [int(l.strip()) for l in open(bfilename, 'r').readlines()]
-        bid2reps = {k:np.zeros(fnum, dtype=np.float64) for k in bids}
+        bids = [int(l.strip()) for l in open(bfilename, 'r').readlines()]   # read in bids.txt
+        bid2reps = {k:np.zeros(fnum, dtype=np.float64) for k in bids}       # build a dict for each bid
 
-        ufiles, vfiles = self._generate_feature_files()
+        ufiles, vfiles = self._generate_feature_files() # ufiles: files of users, vfiles: files of items
+        # ratings or top500 of each metapath
+        # 10-dim vector for each id(uid or bid)
 
         feature_dir = self.data_dir + 'mf_features/path_count/'
         for find, filename in enumerate(ufiles):
             ufs = np.loadtxt(feature_dir + filename, dtype=np.float64)
-            cur = find * self.F
+            cur = find * self.F # self.F: rank for MF to generate latent features, self.F = 10
             for uf in ufs:
                 uid = int(uf[0])
-                f = uf[1:]
-                uid2reps[uid][cur:cur+self.F] = f
+                f = uf[1:]  # from the second number to the last number in each line, 10-dim vector
+                uid2reps[uid][cur:cur+self.F] = f   # each uid2reps element has a len(ufiles)*10
 
         for find, filename in enumerate(vfiles):
             bfs = np.loadtxt(feature_dir + filename, dtype=np.float64)

@@ -85,7 +85,7 @@ def init_exp_configs(config_filename):
         load the configs
     '''
     config = yaml.load(open(config_filename, 'r'))
-    config['config_filename'] = config_filename
+    config['config_filename'] = config_filename     # set a new item in config
     return config
 
 def run_glasso(config, data_loader):
@@ -159,8 +159,17 @@ if __name__ == '__main__':
     # goto run_vary_reg()
     #       change reg_P,reg_Q,reg_W, use different configurations to train
     #       goto run_glasso
-    #           goto FMAKGL.train, the data_loader is the argument transported here
+    #           goto FMAKGL.train (fm_anova_kernel_glasso.py), the data_loader is the argument transported here
+    #           what is the train_filename? ratings_train_%s.txt in data/%s/exp_split/%s/
     #               Use root-mean-square-error (RMSE) as metric
     #               self.solver = nmAPG
     #               goto self._block_nonmono_acc_proximal_gradient_descent(W, P)
     #                   training
+
+    # `config` is in cmd-args
+    # it need a txt file in DataLoader._load(), but what we generated is a pickle file, so we need to change this.
+    # the train_X, train_Y, test_X, test_Y
+    # need to know what is in train_X, train_Y.
+    # train_Y is from data/%s/exp_split/%s/ratings_train_%s.txt, the third column
+    # train_X is built by mf_features, each element contains a matrix with 
+    # config['N'] = L*F*2, L for number of metagraphs
