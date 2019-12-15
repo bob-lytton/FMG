@@ -10,11 +10,14 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args":[
-                "yelp-50k",
-                "all",
-                "1"
-            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: data_gen.py",
+            "cwd": "${workspaceFolder}/yelp_dataset",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/yelp_dataset/data_gen.py",
             "console": "integratedTerminal"
         },
         {

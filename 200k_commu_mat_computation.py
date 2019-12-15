@@ -17,15 +17,22 @@ from utils import reverse_map, generate_adj_mat, save_triplets
 from cal_commuting_mat import *
 
 def get_topK_items(comm_res, ind2uid, ind2bid, topK=1000):
+    """
+    TODO: USEFUL FUNCTION
+    input comm_res is a spmatrix
+    """
     start = time.time()
-    U, _ = comm_res.shape
+    U, _ = comm_res.shape   # get shape[0]
     triplets = []
     for i in range(U):
-        items = comm_res.getrow(i).toarray().flatten()
-        cols = np.argpartition(-items, topK).flatten()[:topK]#descending order
-        cols = [c for c in cols if items[c] > 0]#those less than 1000 non-zero entries, need to be removed zero ones
-        triplets.extend([(ind2uid[i], ind2bid[c], items[c]) for c in cols])
-    #logger.info('get topK items, total %s entries, cost %.2f seconds', len(triplets), time.time() - start)
+        items = comm_res.getrow(i).toarray().flatten()  # getrow is the attribute method of spmatrix
+
+        cols = np.argpartition(-items, topK).flatten()[:topK]   # descending order
+        # it was np.argsort in python2, but reimplemented as argpartition in python3. has the function of sorting
+
+        cols = [c for c in cols if items[c] > 0]    # those less than 1000 non-zero entries, need to be removed zero ones
+        triplets.extend([(ind2uid[i], ind2bid[c], items[c]) for c in cols]) # no sub list
+    
     print ('get top %s items, total %s entries, cost %.2f seconds' % (topK, len(triplets), time.time() - start))
     return triplets
 
