@@ -17,18 +17,8 @@ from logging_util import init_logger
 topK = 500
 
 def run(path_str, comb='', K=10):
-    if path_str in ['ratings_only']:
-        use_topK = False
-    else:
-        use_topK = True
-
-    sim_filename = dir_ + 'sim_res/path_count/%s.res' % path_str
-    if path_str == 'ratings_only':
-        sim_filename = dir_ + 'ratings.txt'
-    if use_topK:
-        sim_filename = dir_ + 'sim_res/path_count/%s_top%s.res' % (path_str, topK)
-    if comb:
-        sim_filename = dir_ + 'sim_res/path_count/combs/%s_%s_top%s.res' % (path_str, comb, topK)
+    sim_filename = dir_ + 'adjs/%s.res' % path_str
+    
     start_time = time.time()
     data = np.loadtxt(sim_filename)
     uids = set(data[:,0].flatten())
@@ -48,11 +38,7 @@ def run(path_str, comb='', K=10):
     mf = MF(data=data, train_data=data, test_data=[], K=K, eps=eps, lamb=lamb, max_iter=iters, call_logger=logger)
     U,V = mf.run()
     start_time = time.time()
-    wfilename = dir_ + 'mf_features/path_count/%s_user.dat' % (path_str)
-    if use_topK:
-        wfilename = dir_ + 'mf_features/path_count/%s_top%s_user.dat' % (path_str, topK)
-    if comb:
-        wfilename = dir_ + 'mf_features/path_count/combs/%s_%s_top%s_user.res' % (path_str, comb, topK)
+    wfilename = dir_ + 'mf_features/%s_user.dat' % (path_str)
 
     fw = open(wfilename, 'w+')
     res = []
@@ -67,11 +53,7 @@ def run(path_str, comb='', K=10):
     print ('User-Features: %s saved in %s, cost %.2f seconds' % (U.shape, wfilename, time.time() - start_time))
 
     start_time = time.time()
-    wfilename = dir_ + 'mf_features/path_count/%s_item.dat' % (path_str)
-    if use_topK:
-        wfilename = dir_ + 'mf_features/path_count/%s_top%s_item.dat' % (path_str, topK)
-    if comb:
-        wfilename = dir_ + 'mf_features/path_count/combs/%s_%s_top%s_item.res' % (path_str, comb, topK)
+    wfilename = dir_ + 'mf_features/%s_item.dat' % (path_str)
 
     fw = open(wfilename, 'w+')
     res = []
@@ -86,11 +68,11 @@ def run(path_str, comb='', K=10):
     print ('Item-Features: %s  saved in %s, cost %.2f seconds' % (V.shape, wfilename, time.time() - start_time))
 
 def run_all_yelp():
-    for path_str in ['UPBCatB','UPBCityB', 'UPBStateB', 'UPBStarsB']:
+    for path_str in ['UPBCaB','UPBCiB', 'UNBCaB', 'UNBCiB']:
         run(path_str)
-    for path_str in ['UPBUB', 'UNBUB', 'URPARUB', 'URNARUB', 'UUB']:
+    for path_str in ['UPBUB', 'UNBUB', 'UUPB', 'UUNB']:
         run(path_str)
-    for path_str in ['URPSRUB', 'URNSRUB']:
+    for path_str in ['UPB', 'UNB']:
         run(path_str)
     for path_str in ['ratings_only']:
         run(path_str)
@@ -153,7 +135,7 @@ if __name__ == '__main__':
         dt = sys.argv[1]
         path_str = sys.argv[2]
         split_num = sys.argv[3]
-        dir_ = 'data/%s/exp_split/%s/' % (dt, split_num)
+        dir_ = 'yelp_dataset/'
         log_filename = 'log/%s_mf_feature_geneartion_%s_split%s.log' % (dt, path_str, split_num)
         exp_id = int(time.time())
         logger = init_logger('exp_%s' % exp_id, log_filename, logging.INFO, False)

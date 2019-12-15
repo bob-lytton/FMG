@@ -5,7 +5,7 @@ exp_type: vary_reg #vary_reg, vary_F, vary_K
 # data info
 dt: yelp-50k # scale of data
 sn: 1 # exp split
-meta_graphs: ['ratings_only', 'UPB', 'UNB', 'UUPB', 'UUNB', 'UPBUB', 'UNBUB', 'UPBCaB', 'UNBCaB', 'UPBCiB', 'UNBCiB'] # meta-graphs used in 
+meta_graphs: ['ratings_only', 'URPSRUB', 'URNSRUB', 'UPBCatB', 'UPBStarsB', 'UPBStateB', 'UPBCityB', 'UPBUB', 'UNBUB', 'UUB', 'URPARUB', 'URNARUB'] # meta-graphs used in 
 topK: 500 # topK neighbours saved in meta-graph based similarity computation, used to specify the corresponding user and item latent features.
 
 # Model parameters

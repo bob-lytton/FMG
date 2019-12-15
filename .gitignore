@@ -12,3 +12,4 @@ yelp_dataset/adjs/*
 yelp_dataset/json/*
 yelp_dataset/rates/*
 yelp_dataset/filtered/*
+yelp_dataset/mf_features/*
