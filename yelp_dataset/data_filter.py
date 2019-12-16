@@ -114,23 +114,97 @@ def filter_rare_node(users, businesses, reviews, user_thresh, business_thresh, f
     print('filter complete')
     return filtered_users, filtered_businesses, filtered_review
 
+def filter_rare_node_new(users, businesses, reviews, user_threshold, business_threshold, friend_threshold):
+    continue_filter = True
+    filtered_users = set()
+    filtered_businesses = set()
+    while(continue_filter):
+        continue_filter = False
+        # filter step 1
+        users_posinteract_num = {}
+        business_posinteract_num = {}
+        users_neginteract_num = {}
+        business_neginteract_num = {}
+        for review in reviews:
+            user_id = review['user_id']
+            business_id = review['business_id']
+            if review['stars'] > 3:
+                users_posinteract_num[user_id] = users_posinteract_num.get(user_id, 0) + 1
+                business_posinteract_num[business_id] = business_posinteract_num.get(business_id, 0) + 1
+            else:
+                users_neginteract_num[user_id] = users_neginteract_num.get(user_id, 0) + 1
+                business_neginteract_num[business_id] = business_neginteract_num.get(business_id, 0) + 1
+        user_interact = set(users_posinteract_num.keys()).intersection(set(users_neginteract_num.keys()))   # intersection
+        business_interact = set(business_posinteract_num.keys()).intersection(set(business_neginteract_num.keys()))
+        # filtered_review_users = set(u for u in user_interact if ((users_posinteract_num[u]+users_neginteract_num[u])>=user_threshold
+        #                                                     and (users_posinteract_num[u]*users_posinteract_num[u])>0))
+        # filtered_review_businesses = set(b for b in business_interact if ((business_posinteract_num[b]+business_neginteract_num[b])>=business_threshold
+        #                                                     and (business_posinteract_num[b]*business_neginteract_num[b])>0))
+        filtered_review_users = set(u for u in user_interact if (users_posinteract_num[u]>=user_threshold and users_neginteract_num[u])>=user_threshold)
+        filtered_review_businesses = set(b for b in business_interact if (business_posinteract_num[b]>=business_threshold and business_neginteract_num[b])>=business_threshold)
+        if (filtered_users != filtered_review_users) or (filtered_businesses != filtered_review_businesses):
+            continue_filter = True
+        # filter step 2
+        #filter user and business
+        user_friends_dict = {}
+        for user in users:
+            user_id = user['user_id']
+            if user_id not in filtered_review_users:
+                continue
+            if not user['friends']:
+                continue
+            filtered_friends = [friend.strip() for friend in user['friends'].split(',') if friend.strip() in filtered_review_users]
+            if len(filtered_friends) >= friend_threshold:
+                user_friends_dict[user_id] = filtered_friends
+        continue_inside = True
+        while (continue_inside):
+            friends = {}
+            continue_inside = False
+            for user, user_friends in user_friends_dict.items():
+                filtered_friends = [friend for friend in user_friends if friend in user_friends_dict]
+                if len(filtered_friends) >= friend_threshold:
+                    friends[user] = filtered_friends
+                else:
+                    continue_inside = True
+            user_friends_dict = deepcopy(friends)
+        filtered_users = set(user_friends_dict.keys())
+        filtered_businesses_list = []
+        for business in businesses:
+            business_id = business['business_id']
+            if business_id not in filtered_review_businesses:
+                continue
+            if not business['categories']:
+                continue
+            if not business['city']:
+                continue
+            filtered_businesses_list.append(business_id)
+        filtered_businesses = set(filtered_businesses_list)
+        filtered_review = []
+        for review in reviews:
+            if (review['user_id'] in filtered_users) and (review['business_id'] in filtered_businesses):
+                filtered_review.append(review)
+        reviews = deepcopy(filtered_review)
+        print(len(list(filtered_users)))
+        print(len(list(filtered_businesses)))
+        print(len(reviews))
+        print('filter loop')
+    print('filter complete')
+    return filtered_users, filtered_businesses, filtered_review
+
 if __name__ == '__main__':
     user_json     = load_jsondata_from_file('json/yelp_academic_dataset_user.json') # 25s   60.5s new
     business_json = load_jsondata_from_file('json/yelp_academic_dataset_business.json') # 4.45s   7.62s new
     review_json   = load_jsondata_from_file('json/yelp_academic_dataset_review.json')   # 69.8s    237.67s new 
 
     t0 = time.time()
-    filtered_user, filtered_business, filtered_reviews = filter_rare_node(user_json, business_json, review_json, 20, 20, 5)
+    # filtered_user, filtered_business, filtered_reviews = filter_rare_node(user_json, business_json, review_json, 20, 20, 5)
+    # filtered_user, filtered_business, filtered_reviews = filter_rare_node(user_json, business_json, review_json, 20, 20, 5)
+    filtered_user, filtered_business, filtered_reviews = filter_rare_node_new(user_json, business_json, review_json, 7, 7, 3)
+    filtered_user, filtered_business, filtered_reviews = filter_rare_node_new(user_json, business_json, review_json, 7, 7, 3)
     t1 = time.time()
     print("filter time cost:", t1 - t0) # 10min
     
     # save filtered results
-    # with open('filtered/users.json', 'w') as fw:
-    #     fw.write(str(list(filtered_user)))
-    # with open('filtered/businesses.json', 'w') as fw:
-    #     fw.write(str(list(filtered_business)))
-    # with open('filtered/reviews.json', 'w') as fw:
-    #     fw.write(str(list(filtered_reviews)))
     with open('filtered/users.pickle', 'wb') as fw:
         pickle.dump(filtered_user, fw, pickle.HIGHEST_PROTOCOL)
     with open('filtered/businesses.pickle', 'wb') as fw:

@@ -122,9 +122,6 @@ class MF_BGD(object):
         X = cm((self.data[:,2], (self.data[:,0].astype(np.int32), self.data[:,1].astype(np.int32)))) #index starting from 0
         M, N = X.shape
         omega = cm((self.train_data[:,2], (self.train_data[:,0], self.train_data[:,1])), shape=(M,N)) #index starting from 0
-
-        self.train_num = omega.getnnz()
-        
         if len(self.test_data):
             trows, tcols = self.test_data[:,0].astype(np.int32), self.test_data[:,1].astype(np.int32)
 

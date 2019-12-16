@@ -1,0 +1,68 @@
+data: yelp_dataset/, path_str: all
+finish load data from yelp_dataset/adjs/adj_UPBCaB.res, cost 1222.67 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UPBCaB_user.dat, cost 0.24 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UPBCaB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UPBCiB.res, cost 352.32 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UPBCiB_user.dat, cost 0.23 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UPBCiB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UNBCaB.res, cost 1169.59 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UNBCaB_user.dat, cost 0.22 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UNBCaB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UNBCiB.res, cost 335.89 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UNBCiB_user.dat, cost 0.25 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UNBCiB_item.dat, cost 0.19 seconds
+finish load data from yelp_dataset/adjs/adj_UPBUB.res, cost 613.57 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UPBUB_user.dat, cost 0.23 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UPBUB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UNBUB.res, cost 375.42 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UNBUB_user.dat, cost 0.23 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UNBUB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UUPB.res, cost 108.18 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UUPB_user.dat, cost 0.24 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UUPB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UUNB.res, cost 73.55 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UUNB_user.dat, cost 0.24 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UUNB_item.dat, cost 0.16 seconds
+finish load data from yelp_dataset/adjs/adj_UPB.res, cost 2.66 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UPB_user.dat, cost 0.23 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UPB_item.dat, cost 0.19 seconds
+finish load data from yelp_dataset/adjs/adj_UNB.res, cost 1.51 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/UNB_user.dat, cost 0.28 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/UNB_item.dat, cost 0.19 seconds
+Traceback (most recent call last):
+  File "mf_features_generator.py", line 146, in <module>
+    run_all_yelp()
+  File "mf_features_generator.py", line 78, in run_all_yelp
+    run(path_str)
+  File "mf_features_generator.py", line 23, in run
+    data = np.loadtxt(sim_filename)
+  File "/home1/lyt/venv/ONLSTM/lib/python3.5/site-packages/numpy/lib/npyio.py", line 968, in loadtxt
+    fh = np.lib._datasource.open(fname, 'rt', encoding=encoding)
+  File "/home1/lyt/venv/ONLSTM/lib/python3.5/site-packages/numpy/lib/_datasource.py", line 269, in open
+    return ds.open(path, mode, encoding=encoding, newline=newline)
+  File "/home1/lyt/venv/ONLSTM/lib/python3.5/site-packages/numpy/lib/_datasource.py", line 623, in open
+    raise IOError("%s not found." % path)
+OSError: yelp_dataset/adjs/adj_ratings_only.res not found.
+data: yelp_dataset/, path_str: all
+finish load data from yelp_dataset/rates/ratings_train_1.txt, cost 4.37 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+Traceback (most recent call last):
+  File "mf_features_generator.py", line 149, in <module>
+    run_all_yelp()
+  File "mf_features_generator.py", line 81, in run_all_yelp
+    run(path_str)
+  File "mf_features_generator.py", line 42, in run
+    U,V = mf.run()
+  File "/home1/lyt/projects/forked_repos/FMG/mf.py", line 135, in run
+    obs = omega.copy().data.astype(np.float64).reshape(self.train_num, 1)
+ValueError: cannot reshape array of size 510098 into shape (534939,1)

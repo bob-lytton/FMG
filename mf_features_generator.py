@@ -17,7 +17,10 @@ from logging_util import init_logger
 topK = 500
 
 def run(path_str, comb='', K=10):
-    sim_filename = dir_ + 'adjs/%s.res' % path_str
+    if path_str == 'ratings_only':
+        sim_filename = dir_ + 'rates/ratings_train_1.txt'
+    else:
+        sim_filename = dir_ + 'adjs/adj_%s.res' % path_str
     
     start_time = time.time()
     data = np.loadtxt(sim_filename)
@@ -68,12 +71,12 @@ def run(path_str, comb='', K=10):
     print ('Item-Features: %s  saved in %s, cost %.2f seconds' % (V.shape, wfilename, time.time() - start_time))
 
 def run_all_yelp():
-    for path_str in ['UPBCaB','UPBCiB', 'UNBCaB', 'UNBCiB']:
-        run(path_str)
-    for path_str in ['UPBUB', 'UNBUB', 'UUPB', 'UUNB']:
-        run(path_str)
-    for path_str in ['UPB', 'UNB']:
-        run(path_str)
+    # for path_str in ['UPBCaB','UPBCiB', 'UNBCaB', 'UNBCiB']:
+    #     run(path_str)
+    # for path_str in ['UPBUB', 'UNBUB', 'UUPB', 'UUNB']:
+    #     run(path_str)
+    # for path_str in ['UPB', 'UNB']:
+    #     run(path_str)
     for path_str in ['ratings_only']:
         run(path_str)
 

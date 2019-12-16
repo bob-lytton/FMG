@@ -68,9 +68,9 @@ def update_configs(config, args):
 
     dt = config['dt']
     # config['data_dir'] = 'data/%s/exp_split/%s/' % (dt, config['sn'])
-    config['data_dir'] = 'yelp_dataset/rates'
-    config['train_filename'] = 'ratings_train_%s.txt' % config['sn']
-    config['test_filename'] = 'ratings_test_%s.txt' % config['sn']
+    config['data_dir'] = 'yelp_dataset/'
+    config['train_filename'] = 'rates/ratings_train_%s.txt' % config['sn']
+    config['test_filename'] = 'rates/ratings_test_%s.txt' % config['sn']
 
     update_configs_by_args(config, args)
 

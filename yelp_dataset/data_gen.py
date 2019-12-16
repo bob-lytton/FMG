@@ -139,7 +139,7 @@ def get_adj_matrix(uid2ind, bid2ind, city_id2ind, cat_id2ind, users, businesses,
     for review in neg_reviews:
         user_id = review[0]
         business_id = review[1]
-        adj_UPB[user_id][business_id] = 1
+        adj_UNB[user_id][business_id] = 1
     #relation B_Ca B_Ci
     for business in businesses:
         if business['business_id'] not in bid2ind:
@@ -229,6 +229,6 @@ if __name__ == "__main__":
             for uid, line in enumerate(t[i]):
                 for bid, num in enumerate(line):
                     if num != 0:
-                        write_str = '%d %d %d\n' % (uid, bid, num)
+                        write_str = '%d %d %.1f\n' % (uid, bid, num)
                         f.write(write_str)
 

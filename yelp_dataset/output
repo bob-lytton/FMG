@@ -1,0 +1,204 @@
+loading json/yelp_academic_dataset_user.json
+loading json/yelp_academic_dataset_user.json done, time cost 29.17
+loading json/yelp_academic_dataset_business.json
+loading json/yelp_academic_dataset_business.json done, time cost 4.79
+loading json/yelp_academic_dataset_review.json
+loading json/yelp_academic_dataset_review.json done, time cost 71.44
+21389
+48632
+1298670
+filter loop
+18586
+16179
+927196
+filter loop
+14011
+15392
+820854
+filter loop
+13766
+13651
+782745
+filter loop
+13077
+13528
+764982
+filter loop
+13014
+13172
+756808
+filter loop
+12822
+13126
+751819
+filter loop
+12795
+13004
+748807
+filter loop
+12728
+12975
+746937
+filter loop
+12713
+12919
+745518
+filter loop
+12681
+12905
+744783
+filter loop
+12675
+12879
+744124
+filter loop
+12659
+12872
+743718
+filter loop
+12655
+12865
+743535
+filter loop
+12651
+12860
+743310
+filter loop
+12651
+12856
+743244
+filter loop
+12647
+12856
+743164
+filter loop
+12647
+12855
+743135
+filter loop
+12644
+12855
+743068
+filter loop
+12644
+12853
+743028
+filter loop
+12642
+12853
+742991
+filter loop
+12642
+12852
+742969
+filter loop
+12642
+12852
+742969
+filter loop
+filter complete
+21389
+48632
+1298670
+filter loop
+18586
+16179
+927196
+filter loop
+14011
+15392
+820854
+filter loop
+13766
+13651
+782745
+filter loop
+13077
+13528
+764982
+filter loop
+13014
+13172
+756808
+filter loop
+12822
+13126
+751819
+filter loop
+12795
+13004
+748807
+filter loop
+12728
+12975
+746937
+filter loop
+12713
+12919
+745518
+filter loop
+12681
+12905
+744783
+filter loop
+12675
+12879
+744124
+filter loop
+12659
+12872
+743718
+filter loop
+12655
+12865
+743535
+filter loop
+12651
+12860
+743310
+filter loop
+12651
+12856
+743244
+filter loop
+12647
+12856
+743164
+filter loop
+12647
+12855
+743135
+filter loop
+12644
+12855
+743068
+filter loop
+12644
+12853
+743028
+filter loop
+12642
+12853
+742991
+filter loop
+12642
+12852
+742969
+filter loop
+12642
+12852
+742969
+filter loop
+filter complete
+filter time cost: 925.8451499938965
+loading json/yelp_academic_dataset_user.json
+loading json/yelp_academic_dataset_user.json done, time cost 25.19
+loading json/yelp_academic_dataset_business.json
+loading json/yelp_academic_dataset_business.json done, time cost 4.68
+loading json/yelp_academic_dataset_review.json
+loading json/yelp_academic_dataset_review.json done, time cost 68.48
+user_id2ind: 12642
+business_id2ind: 12852
+city_id2ind: 160
+category_id2ind: 659
+generating ratings dataset

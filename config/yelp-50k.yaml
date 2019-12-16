@@ -22,3 +22,4 @@ eps: 1e-8 # stopping criteria
 eta: 1e-7 # initial step-size
 solver: nmAPG
 bias_eta: 1e-7 # fixed stepsize for bias
+feature_dir: mf_features/

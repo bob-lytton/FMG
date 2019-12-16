@@ -1,0 +1,5 @@
+data: yelp_dataset/, path_str: all
+finish load data from yelp_dataset/rates/ratings_train_1.txt, cost 15.40 seconds, users: 12642, items=12852
+start generate mf features, (K, eps, reg, iters) = (10, 10, 10, 500)
+User-Features: (12642, 10) saved in yelp_dataset/mf_features/ratings_only_user.dat, cost 0.51 seconds
+Item-Features: (12852, 10)  saved in yelp_dataset/mf_features/ratings_only_item.dat, cost 0.45 seconds
