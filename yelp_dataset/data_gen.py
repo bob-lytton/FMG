@@ -232,3 +232,4 @@ if __name__ == "__main__":
                         write_str = '%d %d %.1f\n' % (uid, bid, num)
                         f.write(write_str)
 
+    # TODO: modify rate to 0-1
