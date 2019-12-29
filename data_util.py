@@ -20,6 +20,7 @@ class DataLoader(object):
         self.data_dir = config.get('data_dir')
         self.train_filename = config.get('train_filename')
         self.test_filename = config.get('test_filename')
+        self.item_num = len(set(np.loadtxt('yelp_dataset/rates/ratings_train_1.txt')[:, 1]))
         self.N = config.get('N')
         self.F = config.get('F')
         self.L = config.get('L')
@@ -124,5 +125,9 @@ class DataLoader(object):
         return uid2reps, bid2reps
 
     def get_exp_data(self):
-        return self.train_X, self.train_Y, self.test_X, self.test_Y
+        return self.train_X, self.train_Y, self.test_X, self.test_Y, self.item_num
+
+if __name__ == "__main__":
+    item_num = len(set(np.loadtxt('yelp_dataset/rates/ratings_train_1.txt')[:, 1]))
+    print(item_num)
 

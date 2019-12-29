@@ -101,13 +101,6 @@ def run_glasso(config, data_loader):
     logging.info('**********fm_anova_kernel_glasso finish, run once, cost %.2f hours*******\n, rmses: %s, maes: %s\navg rmse=%s, avg mae=%s\n***************', cost, rmses[-5:], maes[-5:], np.mean(rmses[-5:]), np.mean(maes[-5:]))
 
 def run_vary_mg(config):
-    '''
-        run meta-graph one by one
-    if 'yelp' in filename:
-        ind2mg = {1: 'M1', 2: 'M9', 3: 'M9', 4: 'M4', 5: 'M7', 6: 'M6', 7: 'M5', 8: 'M3', 9: 'M3', 10: 'M2', 11: 'M8', 12: 'M8'}
-    elif 'amazon' in filename:
-        ind2mg = {1: 'M1', 2: 'M6', 3: 'M6', 4: 'M3', 5: 'M4', 6: 'M2', 7: 'M2', 8: 'M5', 9: 'M5'}
-    '''
     if 'yelp' in config['dt']:
         mg_inds = [[0], [9], [7,8], [3], [6], [5], [4], [10,11], [1,2]]
     elif 'amazon' in config['dt']:
@@ -138,6 +131,7 @@ def run():
     '''
     args = get_args()
 
+    # update config
     config = init_exp_configs(args.config)
     update_configs(config, args)
     set_logfile(config, args)
@@ -155,6 +149,7 @@ def run():
 
 if __name__ == '__main__':
     run()
+    # exp for experiment
     # in yelp-50k.yaml:
     # exp_type: vary_reg
     # goto run_vary_reg()

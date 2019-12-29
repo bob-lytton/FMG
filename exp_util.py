@@ -15,6 +15,5 @@ def cal_mae(test_err):
     return mae
 
 # TODO: add a BPR loss
-def cal_BPR_loss(test_err):
+def cal_auc(test_err):
     pass
-
