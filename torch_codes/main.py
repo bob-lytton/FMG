@@ -24,6 +24,10 @@ def train_MF(metapaths, loadpath, savepath, reg_user=5e-2, reg_item=5e-2, lr=1e-
         trainer = MFTrainer(metapath, loadpath, savepath, epoch[i], cuda=cuda)
         trainer.train(lr=lr[i], reg_user=reg_user[i], reg_item=reg_item[i])
         i += 1
+    # build embedding of x for FM
+
+    # run FM
+    
 
 def train_FM_bpr(dataloader, epoch=50):
     pass

@@ -2,11 +2,22 @@ import os
 import pickle
 import time
 
-import numpy as np
+import numpy as np  # linear algebra
 import torch
 from torch import nn
 from loss import MFLoss
 from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import TensorDataset, DataLoader
+
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import random
+
+from sklearn.model_selection import KFold
+from sklearn.metrics import roc_auc_score
+
+import copy
+print(os.listdir("../input"))
+
 
 gettime = lambda: time.time()
 
@@ -155,33 +166,100 @@ class MFTrainer(object):
         self._export(self.savepath, self.metapath)
 
 
-# class FactorizationMachine(nn.Module):
-#     r"""
-#     Parameters
-#     ----------
+class FactorizationMachine(nn.Module):
+    r"""
+    Parameters
+    ----------
+    n: int
+        number of embeddings, n = n_user + n_item
+    
+    k: int
+        dimension of each embedding
+    """
+    def __init__(self, n=None, k=None):
+        super().__init__()
+        # Initially we fill V with random values sampled from Gaussian distribution
+        # NB: use nn.Parameter to compute gradients
+        self.V = nn.Parameter(torch.randn(n, k),requires_grad=True)
+        self.lin = nn.Linear(n, 1)
 
-#     """
-#     def __init__(self, x):
-#         super(FactorizationMachine, self).__init__()
-#         self.factor = nn.Embedding()
-#         self.weight = nn.Embedding()
-
-#     def forward(self, x):
-#         r"""
-#         Parameters
-#         ----------
-#         x: torch.Tensor.sparse, shape 1*((n_user+n_item)*K)
-#             input embedding of each user-business pair, saved in COO form
+    def forward(self, x):
+        r"""
+        Parameters
+        ----------
+        x: torch.Tensor.sparse, shape 1*((n_user+n_item)*K)
+            input embedding of each user-business pair, saved in COO form
         
-#         Return
-#         ------
-#         y_t: scalar
-#             prediction of 
-#         """
-#         return 
+        Return
+        ------
+        out: scalar
+            prediction of y
+        """
+        out_1 = torch.matmul(x, self.V).pow(2).sum(1, keepdim=True) # S_1^2, S_1 can refer to statistics book
+        out_2 = torch.matmul(x.pow(2), self.V.pow(2)).sum(1, keepdim=True) # S_2
+        
+        out_inter = 0.5*(out_1 - out_2)
+        out_lin = self.lin(x)
+        out = out_inter + out_lin
+        
+        return out
 
-# class BayesianPersonalizedRanking(nn.Module):
-#     def __init__(self, ):
+class FMTrainer(object):
+    def __init__(self, model, train_X, train_Y, test_X, test_Y):
+        r"""
+        Parameters
+        ----------
+        model: nn.Module
+            the FM model
+
+        train_X: torch.tensor
+            each line of train_X is the concatenation of the embeddings of each user and item,
+            and represents a user-item pair
+        """
+        self.FM = model
+        self.train_X = train_X
+        self.train_Y = train_Y
+        self.test_X = test_X
+        self.test_Y = test_Y
+
+    def train(self, nepoch):
+        for epoch in range(nepoch):
+            self.FM()
+
+class BayesianPersonalizedRanking(nn.Module):
+    	def __init__(self, user_num, item_num, factor_num):
+    		super(BPR, self).__init__()
+		"""
+		user_num: number of users;
+		item_num: number of items;
+		factor_num: number of predictive factors.
+		"""		
+		self.embed_user = nn.Embedding(user_num, factor_num)
+		self.embed_item = nn.Embedding(item_num, factor_num)
+
+		nn.init.normal_(self.embed_user.weight, std=0.01)
+		nn.init.normal_(self.embed_item.weight, std=0.01)
+
+	def forward(self, user, item_i, item_j):
+		user = self.embed_user(user)
+		item_i = self.embed_item(item_i)
+		item_j = self.embed_item(item_j)
+
+		prediction_i = (user * item_i).sum(dim=-1)
+		prediction_j = (user * item_j).sum(dim=-1)
+		return prediction_i, prediction_j
+    
+class BPRTrainer(object):
+    def __init__(self, model, train_X, train_Y, test_X, test_Y):
+        self.BPR = model
+        self.train_X = train_X
+        self.train_Y = train_Y
+        self.test_X = test_X
+        self.test_Y = test_Y
+    
+    def train(self, nepoch):
+        for epoch in range(nepoch):
+            pass
 
 if __name__ == "__main__":
     # Test function
