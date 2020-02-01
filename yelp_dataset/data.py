@@ -211,8 +211,6 @@ def get_adj_matrix(userid_to_num, businessid_to_num, cityid_to_num, categoryid_t
     #relation U-U
     adj_UU = np.zeros([tot_users, tot_users])
     adj_UB = np.zeros([tot_users, tot_business])
-    # adj_UB_pos = np.zeros([tot_users, tot_business])
-    # adj_UB_neg = np.zeros([tot_users, tot_business])
     adj_BCa = np.zeros([tot_business, tot_category])
     adj_BCi = np.zeros([tot_business, tot_city])
     for user in users:
@@ -227,33 +225,9 @@ def get_adj_matrix(userid_to_num, businessid_to_num, cityid_to_num, categoryid_t
                 adj_UU[friend_id][user_id] = 1
     #relation U-B
     for review in reviews:
-        # if (review['user_id'] not in userid_to_num) or (review['business_id'] not in businessid_to_num):
-        #     continue
-        # user_id = userid_to_num[review['user_id']]
-        # business_id = businessid_to_num[review['business_id']]
         user_id = review['user_id']
         business_id = review['business_id']
         adj_UB[user_id][business_id] = 1
-        # if review['rate'] > 0:
-        #     adj_UB_pos[user_id][business_id] = 1
-        # else:
-        #     adj_UB_neg[user_id][business_id] = 1
-    # print('pos')
-    # for i in range(tot_users):
-    #     if sum(adj_UB_pos[i,:])==0:
-    #         print(i)
-    # print('neg')
-    # for i in range(tot_users):
-    #     if sum(adj_UB_neg[i,:])==0:
-    #         print(i)
-    # print('split users')
-    # for i in range(tot_users):
-    #     if sum(adj_UB[i,:]) == 0:
-    #         print(i)
-    # print('split businesses')
-    # for j in range(tot_business):
-    #     if sum(adj_UB[:,j]) == 0:
-    #         print(j)
 
     #relation B_Ca B_Ci
     for business in businesses:
@@ -266,17 +240,8 @@ def get_adj_matrix(userid_to_num, businessid_to_num, cityid_to_num, categoryid_t
             category = category.strip()
             category_id = categoryid_to_num[category]
             adj_BCa[business_id][category_id] = 1
+
     #metapath
-    # adj_UUB_pos = adj_UU.dot(adj_UB_pos)
-    # adj_UUB_neg = adj_UU.dot(adj_UB_neg)
-    # adj_UB_pos_U = adj_UB_pos.dot(adj_UB_pos.T)
-    # adj_UB_neg_U = adj_UB_neg.dot(adj_UB_neg.T)
-    # adj_UB_pos_UB_pos = adj_UB_pos_U.dot(adj_UB_pos)
-    # adj_UB_neg_UB_neg = adj_UB_neg_U.dot(adj_UB_neg)
-    # adj_UB_pos_Ca = adj_UB_pos.dot(adj_BCa)
-    # adj_UB_neg_Ca = adj_UB_neg.dot(adj_BCa)
-    # adj_UB_pos_Ci = adj_UB_pos.dot(adj_BCi)
-    # adj_UB_neg_Ci = adj_UB_neg.dot(adj_BCi)
     adj_UUB = adj_UU.dot(adj_UB)
     adj_UBU = adj_UB.dot(adj_UB.T)
     adj_UBUB = adj_UBU.dot(adj_UB)
@@ -285,8 +250,6 @@ def get_adj_matrix(userid_to_num, businessid_to_num, cityid_to_num, categoryid_t
     adj_BCaB = adj_BCa.dot(adj_BCa.T)
     adj_BCiB = adj_BCi.dot(adj_BCi.T)
     return adj_UU, adj_UB, adj_BCi, adj_BCa, adj_UUB, adj_UBU, adj_UBUB, adj_UBCi, adj_UBCa, adj_BCaB, adj_BCiB
-    # return adj_UU, adj_UB_pos, adj_UB_neg, adj_BCa, adj_BCi, adj_UUB_pos, adj_UUB_neg, adj_UB_pos_U, adj_UB_neg_U, \
-    #     adj_UB_pos_UB_pos, adj_UB_neg_UB_neg, adj_UB_pos_Ca, adj_UB_neg_Ca, adj_UB_pos_Ci, adj_UB_neg_Ci, adj_BCaB, adj_BCiB
 
 if __name__ == '__main__':
     user_json = load_jsondata_from_file('json/yelp_academic_dataset_user.json')
@@ -306,28 +269,17 @@ if __name__ == '__main__':
     for i in range(len(r)):
         with open('adjs/' + r_names[i], 'wb') as f:
             pickle.dump(r[i], f, protocol=4)
-    # review_train, review_valid, review_test, train_data_for_user, valid_data_for_user, test_data_for_user, valid_data_with_neg, test_data_with_neg = \
-    #     dataset_split(filtered_reviews, userid_to_num, businessid_to_num, 0.8, 0.1, 0.1, 50)
 
-    # adj_UU, adj_UB_pos, adj_UB_neg, adj_BCa, adj_BCi, adj_UUB_pos, adj_UUB_neg, adj_UB_pos_U, adj_UB_neg_U, \
-    # adj_UB_pos_UB_pos, adj_UB_neg_UB_neg, adj_UB_pos_Ca, adj_UB_neg_Ca, adj_UB_pos_Ci, adj_UB_neg_Ci, adj_BCaB, adj_BCiB = \
-    #     get_adj_matrix(userid_to_num, businessid_to_num, cityid_to_num, categoryid_to_num, user_json, business_json, review_train)
     review_train, review_valid, review_test, valid_data_with_neg, test_data_with_neg = dataset_split(filtered_reviews, userid_to_num, businessid_to_num, 0.8, 0.1, 0.1, 50)
     adj_UU, adj_UB, adj_BCi, adj_BCa, adj_UUB, adj_UBU, adj_UBUB, adj_UBCi, adj_UBCa, adj_BCaB, adj_BCiB = \
         get_adj_matrix(userid_to_num, businessid_to_num, cityid_to_num, categoryid_to_num, user_json, business_json, review_train)
     # relation save
-    # t = (adj_UU, adj_UB_pos, adj_UB_neg, adj_BCa, adj_BCi, adj_UUB_pos, adj_UUB_neg, adj_UB_pos_U, adj_UB_neg_U, \
-    # adj_UB_pos_UB_pos, adj_UB_neg_UB_neg, adj_UB_pos_Ca, adj_UB_neg_Ca, adj_UB_pos_Ci, adj_UB_neg_Ci, adj_BCaB, adj_BCiB)
-    # t_names = ('adj_UU', 'adj_UB_pos', 'adj_UB_neg', 'adj_BCa', 'adj_BCi', 'adj_UUB_pos', 'adj_UUB_neg', 'adj_UB_pos_U', 'adj_UB_neg_U', \
-    # 'adj_UB_pos_UB_pos', 'adj_UB_neg_UB_neg', 'adj_UB_pos_Ca', 'adj_UB_neg_Ca', 'adj_UB_pos_Ci', 'adj_UB_neg_Ci', 'adj_BCaB', 'adj_BCiB')
     t = (adj_UU, adj_UB, adj_BCi, adj_BCa, adj_UUB, adj_UBU, adj_UBUB, adj_UBCi, adj_UBCa, adj_BCaB, adj_BCiB)
     t_names = ('adj_UU', 'adj_UB', 'adj_BCi', 'adj_BCa', 'adj_UUB', 'adj_UBU', 'adj_UBUB', 'adj_UBCi', 'adj_UBCa', 'adj_BCaB', 'adj_BCiB')
     for i in range(len(t)):
         with open('adjs/' + t_names[i], 'wb') as f:
             pickle.dump(t[i], f, protocol=4)
     # train valid test data save
-    # d = (review_train, review_valid, review_test, train_data_for_user, valid_data_for_user, test_data_for_user, valid_data_with_neg, test_data_with_neg)
-    # d_names = ('rate_train', 'rate_valid', 'rate_test', 'train_user', 'valid_user', 'test_user', 'valid_with_neg', 'test_with_neg')
     d = (review_train, review_valid, review_test, valid_data_with_neg, test_data_with_neg)
     d_names = ('rate_train', 'rate_valid', 'rate_test', 'valid_with_neg', 'test_with_neg')
     for i in range(len(d)):
