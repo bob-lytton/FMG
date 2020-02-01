@@ -167,21 +167,21 @@ class MFTrainer(object):
 
 
 class FactorizationMachine(nn.Module):
-    r"""
-    Parameters
-    ----------
-    n: int
-        number of embeddings, n = n_user + n_item
-    
-    k: int
-        dimension of each embedding
-    """
     def __init__(self, n=None, k=None):
+        r"""
+        Parameters
+        ----------
+        n: int
+            number of embeddings, n = n_user + n_item
+        
+        k: int
+            dimension of each embedding
+        """
         super().__init__()
         # Initially we fill V with random values sampled from Gaussian distribution
         # NB: use nn.Parameter to compute gradients
         self.V = nn.Parameter(torch.randn(n, k),requires_grad=True)
-        self.lin = nn.Linear(n, 1)
+        self.lin = nn.Linear(n, 1)  # nn.Linear also contains the bias
 
     def forward(self, x):
         r"""
@@ -198,14 +198,30 @@ class FactorizationMachine(nn.Module):
         out_1 = torch.matmul(x, self.V).pow(2).sum(1, keepdim=True) # S_1^2, S_1 can refer to statistics book
         out_2 = torch.matmul(x.pow(2), self.V.pow(2)).sum(1, keepdim=True) # S_2
         
-        out_inter = 0.5*(out_1 - out_2)
+        out_inter = 0.5*(out_1 - out_2) # sum(<vi, vj>*xi*xj)
         out_lin = self.lin(x)
         out = out_inter + out_lin
         
         return out
 
-class FMTrainer(object):
-    def __init__(self, model, train_X, train_Y, test_X, test_Y):
+    def export(self):
+        path = 'yelp_dataset/fm_res/'
+        V_filename = 'FM_V'
+        lin_filename = 'FM_lin'
+        with open(path+V_filename+'.pickle', 'wb') as fw:
+            pickle.dump(self.V, fw)
+        with open(path+lin_filename+'.pickle', 'wb') as fw:
+            pickle.dump(self.lin, fw)
+
+    def load(self, filename):
+        with open(path+V_filename+'.pickle', 'rb') as f:
+            self.V = pickle.load(f)
+        with open(path+lin_filename+'.pickle', 'rb') as f:
+            self.lin = pickle.load(f)
+
+
+class FMtrainer(object):
+    def __init__(self, train_X, train_Y, criterion=None):
         r"""
         Parameters
         ----------
@@ -215,51 +231,37 @@ class FMTrainer(object):
         train_X: torch.tensor
             each line of train_X is the concatenation of the embeddings of each user and item,
             and represents a user-item pair
+
+        criterion: loss function class,
+            Default is nn.CrossEntropyLoss
         """
-        self.FM = model
         self.train_X = train_X
         self.train_Y = train_Y
         self.test_X = test_X
         self.test_Y = test_Y
+        self.FM = FactorizationMachine(train_X.shape[0], 10)
+        self.criterion = nn.CrossEntropyLoss()
+        if criterion is not None:
+            self.criterion = criterion
+
+    def _export(self):
+        self.FM.export()
 
     def train(self, nepoch):
+        # set optimizer
+        optimizer = torch.optim.Adam([self.FM.V, self.FM.lin], lr=lr)  # use weight_decay
         for epoch in range(nepoch):
-            self.FM()
+            for x, y in self.train_X, self.train_Y:
+                y_t = self.FM(x)
+                loss = self.criterion(y_t, y)
+                loss.backward()
+                optimizer.step()
 
-class BayesianPersonalizedRanking(nn.Module):
-    	def __init__(self, user_num, item_num, factor_num):
-    		super(BPR, self).__init__()
-		"""
-		user_num: number of users;
-		item_num: number of items;
-		factor_num: number of predictive factors.
-		"""		
-		self.embed_user = nn.Embedding(user_num, factor_num)
-		self.embed_item = nn.Embedding(item_num, factor_num)
+            if epoch % 100 == 0:
+                print("epoch %d, loss = %f, lr = %f" % (epoch, loss, lr))
 
-		nn.init.normal_(self.embed_user.weight, std=0.01)
-		nn.init.normal_(self.embed_item.weight, std=0.01)
+        self._export()
 
-	def forward(self, user, item_i, item_j):
-		user = self.embed_user(user)
-		item_i = self.embed_item(item_i)
-		item_j = self.embed_item(item_j)
-
-		prediction_i = (user * item_i).sum(dim=-1)
-		prediction_j = (user * item_j).sum(dim=-1)
-		return prediction_i, prediction_j
-    
-class BPRTrainer(object):
-    def __init__(self, model, train_X, train_Y, test_X, test_Y):
-        self.BPR = model
-        self.train_X = train_X
-        self.train_Y = train_Y
-        self.test_X = test_X
-        self.test_Y = test_Y
-    
-    def train(self, nepoch):
-        for epoch in range(nepoch):
-            pass
 
 if __name__ == "__main__":
     # Test function
