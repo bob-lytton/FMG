@@ -12,12 +12,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader, TensorDataset
 
 from loss import MFLoss
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import KFold
 from utils import read_pickle, write_pickle
-
-print(os.listdir("../input"))
-
 
 gettime = lambda: time.time()
 
@@ -59,16 +54,18 @@ class MatrixFactorizer(nn.Module):
         r"""
         export the embeddings to files
         """
+        user_factors = self.user_factors.detach()
+        item_factors = self.item_factors.detach()
         user_file = filepath + metapath + '_user' + '.pickle'
         item_file = filepath + metapath + '_item' + '.pickle'
-        write_pickle(user_file, self.user_factors)
-        write_pickle(item_file, self.item_factors)
+        write_pickle(user_file, user_factors)
+        write_pickle(item_file, item_factors)
 
 class MFTrainer(object):
     r"""
     Training wrapper of MatrixFactorizer
     """
-    def __init__(self, metapath, loadpath, savepath, epochs=20, n_factor=10, is_binary=True, cuda=False):
+    def __init__(self, metapath, loadpath, savepath, epochs=20, n_factor=3, is_binary=True, cuda=False):
         self.metapath = metapath
         self.loadpath = loadpath
         self.savepath = savepath
@@ -105,7 +102,7 @@ class MFTrainer(object):
         """
         data = []
         if is_binary == True:
-            file = filepath + 'adj_' + metapath
+            file = filepath + 'adj_' + metapath + '.pickle'
             with open(file, 'rb') as fw:
                 adjacency = pickle.load(fw)
                 data = torch.tensor(adjacency, dtype=torch.float32, requires_grad=False).to(self.device)
@@ -136,9 +133,10 @@ class MFTrainer(object):
         -----
         add lr scheduler
         """
+        prev_loss = 0
         # set loss function
         criterion = MFLoss(reg_user, reg_item).to(self.device)
-        optimizer = torch.optim.Adam([self.mf.user_factors, self.mf.item_factors], lr=lr)  # use weight_decay
+        optimizer = torch.optim.Adam([self.mf.user_factors, self.mf.item_factors], lr=lr).to(self.device)  # use weight_decay
         # scheduler = StepLR(optimizer, step_size=decay_step, gamma=decay)
         self.mf.train()
         print("n_user: %d, n_item: %d" % (self.n_user, self.n_item))
@@ -152,12 +150,15 @@ class MFTrainer(object):
             if i % 100 == 0:
                 print("metapath: %s, epoch %d: loss = %.4f, lr = %.10f, reg_user = %f, reg_item = %f" 
                     % (self.metapath, i, loss, lr, reg_user, reg_item))
+                if abs(int(loss) - prev_loss) < 1e-2:
+                    break
+                prev_loss = int(loss)
                 
         self._export(self.savepath, self.metapath)
 
 
 class FactorizationMachine(nn.Module):
-    def __init__(self, n=None, k=None):
+    def __init__(self, n=None, k=None, cuda=False):
         r"""
         Parameters
         ----------
@@ -170,8 +171,9 @@ class FactorizationMachine(nn.Module):
         super().__init__()
         # Initially we fill V with random values sampled from Gaussian distribution
         # NB: use nn.Parameter to compute gradients
-        self.V = nn.Parameter(torch.randn(n, k),requires_grad=True)
-        self.lin = nn.Linear(n, 1)  # nn.Linear also contains the bias
+        self.device = torch.device('cuda:0' if cuda else 'cpu')
+        self.V = nn.Parameter(torch.randn(n, k),requires_grad=True).to(self.device)
+        self.lin = nn.Linear(n, 1).to(self.device)  # nn.Linear also contains the bias
 
     def forward(self, x):
         r"""
@@ -198,8 +200,10 @@ class FactorizationMachine(nn.Module):
         path = 'yelp_dataset/fm_res/'
         V_filename = 'FM_V.pickle'
         lin_filename = 'FM_lin.pickle'
-        write_pickle(path+V_filename, self.V)
-        write_pickle(path+lin_filename, self.lin)
+        V = self.V.detach()
+        lin = self.lin.detach()
+        write_pickle(path+V_filename, V)
+        write_pickle(path+lin_filename, lin)
 
     def load(self, filenames):
         r"""
@@ -211,7 +215,7 @@ class FactorizationMachine(nn.Module):
 
 
 class FMTrainer(object):
-    def __init__(self, train_X, train_Y, valid_X, valid_Y, criterion=None):
+    def __init__(self, train_X, train_Y, valid_X, valid_Y, lr=1e-4, criterion=None, cuda=False):
         r"""
         Parameters
         ----------
@@ -225,23 +229,29 @@ class FMTrainer(object):
         criterion: loss function class,
             Default is nn.CrossEntropyLoss
         """
-        self.train_X = train_X
-        self.train_Y = train_Y
-        self.valid_X = valid_X
-        self.valid_Y = valid_Y
-        self.FM = FactorizationMachine(train_X.shape[0], 10)
+        self.device = torch.device('cuda:0' if cuda else 'cpu')
+        self.train_X = torch.tensor(train_X, dtype=torch.float32, requires_grad=False).to(self.device)
+        self.train_Y = torch.tensor(train_Y, dtype=torch.float32, requires_grad=False).to(self.device)
+        self.valid_X = torch.tensor(valid_X, dtype=torch.float32, requires_grad=False).to(self.device)
+        self.valid_X = torch.tensor(valid_X, dtype=torch.float32, requires_grad=False).to(self.device)
+        self.lr = lr
+        self.FM = FactorizationMachine(train_X.shape[0], 10, cuda=cuda)
         self.criterion = nn.CrossEntropyLoss()
-        if criterion is not None:
-            self.criterion = criterion
+        # if criterion is not None:
+        #     self.criterion = criterion
+
+        self.criterion.to(self.device)
 
     def _export(self):
         self.FM.export()
 
     def train(self, nepoch):
         # set optimizer
-        optimizer = torch.optim.Adam([self.FM.V, self.FM.lin], lr=lr)  # use weight_decay
+        optimizer = torch.optim.Adam([self.FM.V, self.FM.lin], lr=lr).to(self.device)  # use weight_decay
+        self.FM.train()
         for epoch in range(nepoch):
             for x, y in self.train_X, self.train_Y:
+                self.FM.zero_grad()
                 y_t = self.FM(x)
                 loss = self.criterion(y_t, y)
                 loss.backward()
@@ -251,6 +261,7 @@ class FMTrainer(object):
                 print("epoch %d, loss = %f, lr = %f" % (epoch, loss, lr))
             if epoch % 100 == 0:
                 # valid evaluate
+                pass
 
         self._export()
 
