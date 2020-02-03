@@ -131,19 +131,6 @@ class FMAKGL(object):
         P_wfilename = 'fm_res/%s_split%s_P_%s_exp%s.txt' % (dt, split_num, self.reg_P, self.exp_id)
         np.savetxt(P_wfilename, P)
         logging.info('W and P saved in %s and %s', W_wfilename, P_wfilename)
-
-    def _fm_with_bpr(self, W, H):
-        """
-        Parameter
-        ---------
-        W: N*k matrix
-            matrix of user embedding
-        H: N*k matrix
-            matrix of item embedding
-        """
-        indptr = [u for u in range(self.item_num)]
-
-        sampled_pos, sampled_neg = self._sample(len(self.train_X), self.item_num, )
         
     def _sample(self, n_users, n_items, indices, indptr):
         """

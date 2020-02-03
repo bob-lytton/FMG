@@ -1,8 +1,8 @@
-import torch
-from torch import nn
-import torch.nn.functional as F
-from torch import norm
 import numpy as np
+import torch
+import torch.nn.functional as F
+from torch import nn, norm
+
 
 class MFLoss(nn.Module):
     def __init__(self, reg_user, reg_item):
@@ -23,4 +23,3 @@ class MFLoss(nn.Module):
         adj: torch.Tensor
         """
         return 0.5 * norm(adj_predicted - adj, p='fro') + self.reg_user * norm(user_mat, p='fro') + self.reg_item * norm(item_mat, p='fro')
-    

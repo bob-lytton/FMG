@@ -1,21 +1,21 @@
+import copy
 import os
 import pickle
+import random
 import time
 
 import numpy as np  # linear algebra
+import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import torch
 from torch import nn
-from loss import MFLoss
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import random
-
-from sklearn.model_selection import KFold
+from loss import MFLoss
 from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import KFold
+from utils import read_pickle, write_pickle
 
-import copy
 print(os.listdir("../input"))
 
 
@@ -25,7 +25,7 @@ class MatrixFactorizer(nn.Module):
     """
     Updating Embeddings within the model is OK
     """
-    def __init__(self, n_user, n_item, n_factor=10, iters=500, cuda=False):
+    def __init__(self, n_user, n_item, n_factor=10, cuda=False):
         r"""
         Parameters
         ----------
@@ -35,17 +35,10 @@ class MatrixFactorizer(nn.Module):
         n_item: int
             number of items
 
-       n_factor: int
+        n_factor: int
             embedding dim
-
-        iters: int
-            number of iteration
         """
         super(MatrixFactorizer, self).__init__()
-        self.iters = iters
-        self.n_user = n_user
-        self.n_item = n_item
-        self.n_factor = n_factor
         self.device = torch.device('cuda:0' if cuda else 'cpu')
         self.user_factors = torch.randn([n_user, n_factor], dtype=torch.float32, requires_grad=True, device=self.device)
         self.item_factors = torch.randn([n_item, n_factor], dtype=torch.float32, requires_grad=True, device=self.device)
@@ -66,30 +59,27 @@ class MatrixFactorizer(nn.Module):
         r"""
         export the embeddings to files
         """
-        user_file = filepath + metapath + '_user'
-        item_file = filepath + metapath + '_item'
-        with open(user_file+'.pickle', 'wb') as fw:
-            pickle.dump(self.user_factors, fw)
-        with open(item_file+'.pickle', 'wb') as fw:
-            pickle.dump(self.item_factors, fw)
+        user_file = filepath + metapath + '_user' + '.pickle'
+        item_file = filepath + metapath + '_item' + '.pickle'
+        write_pickle(user_file, self.user_factors)
+        write_pickle(item_file, self.item_factors)
 
 class MFTrainer(object):
     r"""
     Training wrapper of MatrixFactorizer
     """
-    def __init__(self, metapath, loadpath, savepath, epoch=20, n_factor=10, iters=500, is_binary=True, cuda=False):
+    def __init__(self, metapath, loadpath, savepath, epochs=20, n_factor=10, is_binary=True, cuda=False):
         self.metapath = metapath
         self.loadpath = loadpath
         self.savepath = savepath
-        self.epoch = epoch
+        self.epochs = epochs
         self.n_factor = n_factor
-        self.iters = iters
         self.cuda = cuda
         self.device = torch.device('cuda:0' if cuda else 'cpu')
         self.n_user, self.n_item, self.adj_mat = self._load_data(loadpath, metapath, is_binary)
 
         # instance model
-        self.mf = MatrixFactorizer(self.n_user, self.n_item, self.n_factor, self.iters, self.cuda)
+        self.mf = MatrixFactorizer(self.n_user, self.n_item, self.n_factor, self.cuda)
     
     def _load_data(self, filepath, metapath, is_binary=True):
         r"""
@@ -152,7 +142,7 @@ class MFTrainer(object):
         # scheduler = StepLR(optimizer, step_size=decay_step, gamma=decay)
         self.mf.train()
         print("n_user: %d, n_item: %d" % (self.n_user, self.n_item))
-        for i in range(self.epoch + 1):
+        for i in range(self.epochs + 1):
             # scheduler.step()
             self.mf.zero_grad()
             adj_t = self.mf()
@@ -206,22 +196,22 @@ class FactorizationMachine(nn.Module):
 
     def export(self):
         path = 'yelp_dataset/fm_res/'
-        V_filename = 'FM_V'
-        lin_filename = 'FM_lin'
-        with open(path+V_filename+'.pickle', 'wb') as fw:
-            pickle.dump(self.V, fw)
-        with open(path+lin_filename+'.pickle', 'wb') as fw:
-            pickle.dump(self.lin, fw)
+        V_filename = 'FM_V.pickle'
+        lin_filename = 'FM_lin.pickle'
+        write_pickle(path+V_filename, self.V)
+        write_pickle(path+lin_filename, self.lin)
 
-    def load(self, filename):
-        with open(path+V_filename+'.pickle', 'rb') as f:
-            self.V = pickle.load(f)
-        with open(path+lin_filename+'.pickle', 'rb') as f:
-            self.lin = pickle.load(f)
+    def load(self, filenames):
+        r"""
+        load parameters from files
+        """
+        V_file, lin_file = filenames
+        self.V = read_pickle(V_file)
+        self.lin = read_pickle(lin_file)
 
 
-class FMtrainer(object):
-    def __init__(self, train_X, train_Y, criterion=None):
+class FMTrainer(object):
+    def __init__(self, train_X, train_Y, valid_X, valid_Y, criterion=None):
         r"""
         Parameters
         ----------
@@ -237,8 +227,8 @@ class FMtrainer(object):
         """
         self.train_X = train_X
         self.train_Y = train_Y
-        self.test_X = test_X
-        self.test_Y = test_Y
+        self.valid_X = valid_X
+        self.valid_Y = valid_Y
         self.FM = FactorizationMachine(train_X.shape[0], 10)
         self.criterion = nn.CrossEntropyLoss()
         if criterion is not None:
@@ -257,22 +247,14 @@ class FMtrainer(object):
                 loss.backward()
                 optimizer.step()
 
-            if epoch % 100 == 0:
+            if epoch % 50 == 0:
                 print("epoch %d, loss = %f, lr = %f" % (epoch, loss, lr))
+            if epoch % 100 == 0:
+                # valid evaluate
 
         self._export()
 
 
 if __name__ == "__main__":
     # Test function
-    n_user = 1000
-    n_item = 1000
-    n_factor = 10
-    U = torch.tensor([i for i in range(n_user)]).cuda()
-    I = torch.tensor([i for i in range(n_item)]).cuda()
-    mf = MatrixFactorizer(n_user, n_item).cuda()
-    t0 = gettime()
-    D = mf(U, I)
-    t1 = gettime()
-    print("time cost:", t1 - t0)
-    print(D)
+    pass
