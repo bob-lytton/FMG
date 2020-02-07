@@ -116,11 +116,7 @@ class FactorizationMachine(nn.Module):
         """
         out_1 = torch.matmul(x, self.V).pow(2).sum(1, keepdim=True)        # S_1^2, S_1 can refer to statistics book
         out_2 = torch.matmul(x.pow(2), self.V.pow(2)).sum(1, keepdim=True) # S_2
-        # x = x.unsqueeze(1)
-        # out_1 = torch.mul(self.V, x).pow(2).sum(1, keepdim=True)         # (\sum v_ik*x)^2
-        # out_2 = torch.mul(self.V.pow(2), x.pow(2)).sum(1, keepdim=True)  # \sum (v_ik^2 * x^2)
         out_inter = 0.5*(out_1 - out_2).sum(1)                             # \sum(<vi, vj>*xi*xj)
-        # out_lin = torch.matmul(self.W, x) + self.w0
         out_lin = torch.matmul(self.W, x.T) + self.w0
         out = out_inter + out_lin
         out = out.unsqueeze(1).repeat(1, 2)
