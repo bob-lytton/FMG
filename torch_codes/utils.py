@@ -21,16 +21,23 @@ def load_feature(feature_path, metapaths):
         
     return user_features, item_features
 
-def make_embedding(user_features, item_features):
+def make_embedding(user_features, item_features, cuda=False):
+    r"""
+    Return
+    ------
+    embed: torch.tensor with size(\[ n_user, n_item, 2*L*K \])
+    """
     user_concat = torch.cat(user_features, 1)
     item_concat = torch.cat(item_features, 1)
-    X = []
+    embed = []
     for user in user_concat:
         tmp = [torch.cat([user,item], 0).unsqueeze(0) for item in item_concat]
         tmp = torch.cat(tmp, 0)
-        X.append(tmp.unsqueeze(0))
-    X = torch.cat(X, 0)
-    return X
+        embed.append(tmp.unsqueeze(0))
+    embed = torch.cat(embed, 0)
+    device = torch.device('cuda:0' if cuda else 'cpu')
+    embed.to(device)
+    return embed
 
 def make_labels(Y, n_user, n_item):
     r"""
@@ -41,14 +48,15 @@ def make_labels(Y, n_user, n_item):
     
     Return
     ------
-    ret: torch.Tensor
-        sparse tensor in COO form
+    ret: numpy.ndarray
     """
-    indices = np.array(([y['user_id'] for y in Y], [y['business_id'] for y in Y]))
-    values = np.array([1. for y in Y])
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    ret = torch.sparse_coo_tensor(indices, values, size=(n_user,n_item),
-                                  dtype=torch.float32, device=device, requires_grad=False)
+    if 'business_id' in Y[0].keys():
+        ret = [[y['user_id'], y['business_id'], 1] for y in Y]
+    elif 'neg_business_id' in Y[0].keys():
+        pos = [[y['user_id'], pos_id, 1] for y in Y for pos_id in y['pos_business_id']]
+        neg = [[y['user_id'], neg_id, 0] for y in Y for neg_id in y['neg_business_id']]
+        ret = pos + neg
+    ret = np.asarray(ret)   # without copying the data again
     return ret
 
 if __name__ == "__main__":

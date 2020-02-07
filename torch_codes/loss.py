@@ -22,4 +22,6 @@ class MFLoss(nn.Module):
 
         adj: torch.Tensor
         """
-        return 0.5 * norm(adj_predicted - adj, p='fro') + self.reg_user * norm(user_mat, p='fro') + self.reg_item * norm(item_mat, p='fro')
+        return 0.5 * norm(adj_predicted - adj, p='fro') + \
+            self.reg_user * norm(user_mat, p='fro') + \
+            self.reg_item * norm(item_mat, p='fro')
