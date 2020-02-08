@@ -1,9 +1,11 @@
+.vscode/*
 data/*
 *.pyc
 baselines/*.txt
 baselines/*.dat
 *.so
 log/*
+log-50k/*
 *pylint
 *pylints/*
 *test_scripts/*

@@ -28,11 +28,11 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: data_gen.py",
-            "cwd": "${workspaceFolder}/yelp_dataset",
+            "name": "Python: main.py",
+            "cwd": "${workspaceFolder}/torch_codes",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/yelp_dataset/data_gen.py",
+            "program": "${workspaceFolder}/torch_codes/main.py",
             "console": "integratedTerminal"
         },
         {
