@@ -83,7 +83,8 @@ def MFTrainer(metapath, loadpath, savepath, epochs=5000, n_factor=3,
 
     def _load_data(filepath, metapath, device):
         data = []
-        file = filepath + 'adj_' + metapath + '.pickle'
+#        file = filepath + 'adj_' + metapath + '.pickle'
+        file = filepath + 'adj_' + metapath
         with open(file, 'rb') as fw:
             adjacency = pickle.load(fw)
             data = torch.tensor(adjacency, dtype=torch.float32, requires_grad=False).to(device)
@@ -92,6 +93,8 @@ def MFTrainer(metapath, loadpath, savepath, epochs=5000, n_factor=3,
 
     n_user, n_item, adj_mat = _load_data(loadpath, metapath, device)
     mf = MatrixFactorizer(n_user, n_item, n_factor, cuda).to(device)
+
+    print("--------------------- n_user: {}, n_item: {}---------------------".format(n_user, n_item))
 
     prev_loss = 0
     # set loss function
@@ -179,43 +182,55 @@ def train_FM(model, embed, train_data, valid_data, epochs=500, lr=1e-4, criterio
 
     
 if __name__ == "__main__":
-    filtered_path = '../yelp_dataset/filtered/'
-    adj_path = '../yelp_dataset/adjs/'
-    feat_path = '../yelp_dataset/mf_features/'
-    rate_path = '../yelp_dataset/rates/'
+    read_path = '/home1/wyf/Projects/gnn4rec/multi-embedding-HAN/yelp_dataset/'
+    write_path = '../yelp_dataset/'
+    filtered_path = read_path + 'filtered/'
+    adj_path = read_path + 'adjs/'
+    feat_path = write_path + 'mf_features/'
+    rate_path = read_path + 'rates/'
 
     # train MF
-    # metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB']
-    metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB', 'UCaB', 'UCiB', 'UCaBCiB', 'UCiBCaB']
+    metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB']
+    # metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB', 'UCaB', 'UCiB', 'UCaBCiB', 'UCiBCaB']
     t0 = gettime()
-    train_MF(metapaths, 
-             adj_path, 
-             feat_path, 
-             epoch=[5000, 5000, 5000, 20000, 5000, 10000, 10000, 10000, 10000], 
-             lr=[5e-3, 5e-2, 1e-2, 1e-2, 5e-3, 5e-3, 5e-3, 5e-3, 5e-3], 
-             reg_user=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1], 
-             reg_item=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1], cuda=True)
+#    train_MF(metapaths, 
+#             adj_path, 
+#             feat_path, 
+#             epoch=[10000, 20000, 20000, 20000, 20000], #, 20000, 10000, 50000, 50000], 
+#             lr=[5e-3, 5e-3, 5e-3, 5e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3], 
+#             reg_user=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
+#             reg_item=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
+#             cuda=True)
     t1 = gettime()
     print("time cost: %f" % (t1 - t0))
 
     # train FM (cross entropy loss)
     t0 = gettime()
     print("loading data...")
-    train_data = read_pickle(rate_path+'train_data.pickle')
-    # Do we need negative samples? Yes, we do!
-    valid_data = read_pickle(rate_path+'valid_with_neg_sample.pickle')
-    test_data = read_pickle(rate_path+'test_with_neg_sample.pickle')
+#    train_data = read_pickle(rate_path+'train_data')
+    train_data = read_pickle(rate_path+'rate_train')
+    # Do we need negative samples? Yes!
+#    valid_data = read_pickle(rate_path+'valid_with_neg_sample')
+#    test_data = read_pickle(rate_path+'test_with_neg_sample')
+    valid_data = read_pickle(rate_path+'valid_with_neg')
+    test_data = read_pickle(rate_path+'test_with_neg')
     print("time cost: %f" % (gettime() - t0))
 
     t0 = gettime()
     print("loading features and (make) embeddings...")
     # small dataset
-    users = read_pickle(filtered_path+'users-small.pickle')
-    businesses = read_pickle(filtered_path+'businesses-small.pickle')
+#    users = read_pickle(filtered_path+'users-small.pickle')
+#    businesses = read_pickle(filtered_path+'businesses-small.pickle')
+
+    # temporary solution
+    adj_UB = read_pickle(adj_path+'adj_UB')
+    n_users = adj_UB.shape[0]
+    n_items = adj_UB.shape[1]
+    del adj_UB
     
     # full dataset
-    # users = read_pickle(filtered_path+'users-complete.pickle')
-    # businesses = read_pickle(filtered_path+'businesses-complete.pickle')
+#    users = read_pickle(filtered_path+'users-complete.pickle')
+#    businesses = read_pickle(filtered_path+'businesses-complete.pickle')
     if os.path.exists(feat_path+'embed.pickle'):
         embed = read_pickle(feat_path+'embed.pickle')
     else:
@@ -226,8 +241,8 @@ if __name__ == "__main__":
 
     t0 = gettime()
     print("making datasets...")
-    n_users = len(users)
-    n_items = len(businesses)
+#    n_users = len(users)
+#    n_items = len(businesses)
     business_ids = set(i for i in range(n_items))
     print("n_users:", n_users, "n_items:", n_items)
     train_dataset = FMG_YelpDataset(train_data, n_users, n_items, neg_sample_n=5, mode='train', cuda=True)
@@ -240,7 +255,7 @@ if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = FactorizationMachine(embed.shape[2], 20, cuda=True).to(device)
 
-    train_FM(model, embed, train_dataset, valid_dataset, epochs=100, lr=5e-3, cuda=True)
+    train_FM(model, embed, train_dataset, valid_dataset, epochs=10, lr=5e-3, cuda=True)
 
     print("time cost: %f" % (gettime() - t0))
 
