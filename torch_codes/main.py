@@ -8,10 +8,57 @@ from torch.utils.data import DataLoader
 
 from data import *
 from loss import MFLoss
+from metrics import *
 from model import FactorizationMachine, MatrixFactorizer
 from utils import *
 
 gettime = lambda: time.time()
+
+def eval(embed, valid_data, model, criterion, topK):
+    r"""
+    Calculate precision, recall and ndcg of the prediction of the model.
+    Returns
+    -------
+    precision, recall, ndcg
+    """
+    valid_loader = DataLoader(valid_data, batch_size=1, shuffle=True)
+    model.eval()
+
+    loss_list = []
+    prec_list = []
+    recall_list = []
+    ndcg_list = []
+    for i, data in enumerate(valid_loader):
+        user, items, labels = data
+        user = user.view(-1)
+        items = items.view(-1)
+        labels = labels.view(-1)
+        x = embed[user, items]
+        out = model(x)
+        # Use a Sigmoid to classify
+        y_t = torch.sigmoid(out)
+        # print(out)
+        # y_t = out.clone()
+        y_t = y_t.unsqueeze(1).repeat(1, 2)
+        y_t[:, 1] = 1 - y_t[:, 0]
+        loss = criterion(y_t, labels)
+        values, indices = torch.topk(out, topK)
+        ranklist = items[indices]
+        gtItems = items[torch.nonzero(labels)[:, 0]].tolist()
+        loss_list.append(loss.item())
+        prec_list.append(getP(ranklist, gtItems))
+        recall_list.append(getR(ranklist, gtItems))
+        ndcg_list.append(getNDCG(ranklist, gtItems))
+
+    loss = np.mean(np.asarray(loss_list))
+    prec = np.mean(np.asarray(prec_list))
+    recall = np.mean(np.asarray(recall_list))
+    ndcg = np.mean(np.asarray(ndcg_list))
+
+    print("evaluation: loss: %f, precision@%d: %f, recall@%d: %f, NDCG: %f" % (loss, topK, prec, topK, recall, ndcg))
+
+    return loss, prec, recall, ndcg
+
 
 def train_MF(metapaths, loadpath, savepath, reg_user=5e-2, reg_item=5e-2, lr=1e-2, epoch=5000, cuda=False):
     r"""
@@ -68,7 +115,7 @@ def MFTrainer(metapath, loadpath, savepath, epochs=5000, n_factor=3,
             
     mf.export(savepath, metapath)
 
-def train_FM(embed, train_data, valid_data, pos_sampleset_list=None, epochs=500, n_neg=4, lr=1e-4, criterion=None, cuda=False):
+def train_FM(model, embed, train_data, valid_data, epochs=500, lr=1e-4, criterion=None, cuda=False):
     r"""
     Parameters
     ----------
@@ -86,48 +133,50 @@ def train_FM(embed, train_data, valid_data, pos_sampleset_list=None, epochs=500,
     device = torch.device('cuda:0' if cuda else 'cpu')
 
     train_loader = DataLoader(train_data, batch_size=5, shuffle=True)
-    valid_loader = DataLoader(valid_data, batch_size=10, shuffle=True)
-
-    FM = FactorizationMachine(embed.shape[2], 10, cuda).to(device)
+    FM = model
 
     if not criterion:
         criterion = nn.CrossEntropyLoss()
     criterion.to(device)
 
+    # validation and training interruption
+    best_loss = 1e10
+    i = 0
+
     # set optimizer
     optimizer = torch.optim.Adam([FM.V, FM.W, FM.w0], lr=lr)  # maybe use weight_decay
+    FM.train()
     for epoch in range(epochs):
-        FM.train()
+        t0 = gettime()
         for i, data in enumerate(train_loader):
             optimizer.zero_grad()
-            indices, y = data       # indices: [[i, j], [i, j], ...]
-            # negative sampling
-            neg_labels = torch.zeros(indices.shape[0]*n_neg, dtype=torch.long, device=device)
-            for xi, yi in indices:
-                uid = xi.item()
-                neg_sample_array = np.asarray(list(business_ids - pos_sampleset_list[uid]))
-                neg_samples = np.random.choice(neg_sample_array, n_neg, replace=False)
-                neg_inds = torch.tensor(np.asarray([[uid, neg_sample] for neg_sample in neg_samples]), device=device)
-                indices = torch.cat([indices, neg_inds])
-            y = torch.cat([y, neg_labels])
+            indices, target = data       # indices: [[i, j], [i, j], ...]
+            indices = indices.view(-1, 2)
+            target = target.view(-1)
             x = embed[indices[:, 0], indices[:, 1]]
-            y_t = FM(x)
-            loss = criterion(y_t, y)
+            out = FM(x)
+            # Use a Sigmoid to classify
+            y_t = torch.sigmoid(out)
+            # y_t = out.clone()
+            y_t = y_t.unsqueeze(1).repeat(1, 2)
+            y_t[:, 1] = 1 - y_t[:, 0]
+            loss = criterion(y_t, target)
             loss.backward()
             optimizer.step()
+        print("epoch %d, loss = %f, lr = %f, time cost = %f" % (epoch, loss, lr, gettime() - t0))
 
-        # if epoch % 50 == 0:
-        print("epoch %d, loss = %f, lr = %f" % (epoch, loss, lr))
-        if epoch % 50 == 0:
-            # valid evaluate
-            FM.eval()
-            for i, data in enumerate(valid_loader):
-                indices, y = data
-                x = embed[indices[:,0], indices[:,1]]
-                y_t = FM(x)
-                # metrics?
+        # Validation
+        if epoch % 10 == 0:
+            loss, prec, recall, ndcg = eval(embed, valid_data, FM, criterion, 20)
+            if loss > best_loss:
+                i += 1
+                if i > 5:
+                    break
+            elif loss < best_loss:
+                best_loss = loss
+                print("saving current model...")
+                # FM.export()
 
-    FM.export()
     
 if __name__ == "__main__":
     filtered_path = '../yelp_dataset/filtered/'
@@ -136,15 +185,16 @@ if __name__ == "__main__":
     rate_path = '../yelp_dataset/rates/'
 
     # train MF
-    metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB']
+    # metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB']
+    metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB', 'UCaB', 'UCiB', 'UCaBCiB', 'UCiBCaB']
     t0 = gettime()
-    # train_MF(metapaths, 
-    #          adj_path, 
-    #          feat_path, 
-    #          epoch=[5000, 5000, 5000, 20000, 5000], 
-    #          lr=[2e-3, 5e-2, 5e-3, 5e-3, 5e-3], 
-    #          reg_user=[1e-1, 1e-1, 1e-1, 1e-1, 1e-1], 
-    #          reg_item=[1e-1, 1e-1, 1e-1, 1e-1, 1e-1], cuda=True)
+    train_MF(metapaths, 
+             adj_path, 
+             feat_path, 
+             epoch=[5000, 5000, 5000, 20000, 5000, 10000, 10000, 10000, 10000], 
+             lr=[5e-3, 5e-2, 1e-2, 1e-2, 5e-3, 5e-3, 5e-3, 5e-3, 5e-3], 
+             reg_user=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1], 
+             reg_item=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1, 5e-1], cuda=True)
     t1 = gettime()
     print("time cost: %f" % (t1 - t0))
 
@@ -154,6 +204,7 @@ if __name__ == "__main__":
     train_data = read_pickle(rate_path+'train_data.pickle')
     # Do we need negative samples? Yes, we do!
     valid_data = read_pickle(rate_path+'valid_with_neg_sample.pickle')
+    test_data = read_pickle(rate_path+'test_with_neg_sample.pickle')
     print("time cost: %f" % (gettime() - t0))
 
     t0 = gettime()
@@ -179,13 +230,20 @@ if __name__ == "__main__":
     n_items = len(businesses)
     business_ids = set(i for i in range(n_items))
     print("n_users:", n_users, "n_items:", n_items)
-    train_array, pos_sampleset_list = make_labels(train_data, n_users, n_items)
-    valid_array = make_labels(valid_data, n_users, n_items)
-    train_dataset = make_dataset(train_array, cuda=True)
-    valid_dataset = make_dataset(valid_array, cuda=True)
+    train_dataset = FMG_YelpDataset(train_data, n_users, n_items, neg_sample_n=5, mode='train', cuda=True)
+    valid_dataset = FMG_YelpDataset(valid_data, n_users, n_items, neg_sample_n=20, mode='valid', cuda=True)
+    test_dataset = FMG_YelpDataset(test_data, n_users, n_items, neg_sample_n=20, mode='test', cuda=True)
     print("time cost: %f" % (gettime() - t0))
 
     t0 = gettime()
     print("start training FM...")
-    train_FM(embed, train_dataset, valid_dataset, pos_sampleset_list, 1000, lr=1e-3, cuda=True)
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    model = FactorizationMachine(embed.shape[2], 20, cuda=True).to(device)
+
+    train_FM(model, embed, train_dataset, valid_dataset, epochs=100, lr=5e-3, cuda=True)
+
     print("time cost: %f" % (gettime() - t0))
+
+    # result: loss gets lower as n_neg gets higher
+    # Testing
+    eval(embed, test_dataset, model, nn.CrossEntropyLoss(), 20)

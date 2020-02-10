@@ -90,14 +90,10 @@ class FactorizationMachine(nn.Module):
         out_inter = 0.5*(out_1 - out_2).sum(1)                             # \sum(<vi, vj>*xi*xj)
         out_lin = torch.matmul(self.W, x.T) + self.w0
         out = out_inter + out_lin
-        # Use a Sigmoid to classify
-        out = torch.sigmoid(out)
-        out = out.unsqueeze(1).repeat(1, 2)
-        out[:, 1] = 1 - out[:, 0]
         return out
 
     def export(self):
-        path = 'yelp_dataset/fm_res/'
+        path = '../yelp_dataset/fm_res/'
         V_filename = 'FM_V.pickle'
         W_filename = 'FM_W.pickle'
         V = self.V.detach()
