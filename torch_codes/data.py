@@ -5,6 +5,14 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, TensorDataset
 
+from utils import *
+
+
+def load_feature(feature_path, metapaths):
+    user_features = [read_pickle(feature_path+metapath+'_user.pickle') for metapath in metapaths]
+    item_features = [read_pickle(feature_path+metapath+'_item.pickle') for metapath in metapaths]
+    return user_features, item_features
+
 def make_embedding(user_features, item_features, cuda=False):
     r"""
     Return
@@ -12,7 +20,7 @@ def make_embedding(user_features, item_features, cuda=False):
     embed: torch.tensor with size(\[ n_user, n_item, 2*L*K \])
     """
     user_concat = torch.cat(user_features, 1)
-    item_concat = torch.cat(item_features, 1)
+    item_concat = torch.cat(item_features, 1)   
     embed = []
     for user in user_concat:
         tmp = [torch.cat([user,item], 0).unsqueeze(0) for item in item_concat]
