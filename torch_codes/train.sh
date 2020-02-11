@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1 python main.py --cluster=True --K=30 --factor=30 > train_output_2
+CUDA_VISIBLE_DEVICES=1 python main.py --mf-train --cluster --fm-factor=30 --mf-factor=30 > train_output_2
