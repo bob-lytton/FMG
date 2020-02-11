@@ -234,7 +234,7 @@ if __name__ == "__main__":
         train_MF(metapaths, 
                 adj_path, 
                 feat_path, 
-                n_factor=20,
+                n_factor=args.mf_factor,
                 epoch=[10000, 20000, 20000, 20000, 20000], #, 20000, 10000, 50000, 50000], 
                 lr=[5e-3, 5e-3, 5e-3, 5e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3], 
                 reg_user=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
