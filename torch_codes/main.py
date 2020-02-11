@@ -37,6 +37,7 @@ def parse_args():
     parse.add_argument('--cluster', type=bool, default=False, help="Run the program on cluster or PC")
     parse.add_argument('--toy', type=bool, default=False, help="Toy dataset for debugging")
     parse.add_argument('--MF-train', type=bool, default=False, help="Run Matrix Factorization training")
+    parse.add_argument('--factor', type=int, default=20, help="n_factor for MF")
 
     return parse.parse_args()
 
@@ -102,7 +103,7 @@ def MFTrainer(metapath, loadpath, savepath, n_factor, epochs=5000,
             
     mf.export(savepath, metapath)
 
-def train_FM(model, embed, train_data, valid_data, epochs=500, lr=1e-4, criterion=None, cuda=False):
+def train_FM(model, train_data, valid_data, epochs=500, lr=1e-4, criterion=None, cuda=False):
     r"""
     Parameters
     ----------
@@ -137,10 +138,10 @@ def train_FM(model, embed, train_data, valid_data, epochs=500, lr=1e-4, criterio
         t0 = gettime()
         for i, data in enumerate(train_loader):
             optimizer.zero_grad()
-            indices, target = data       # indices: [[i, j], [i, j], ...]
-            indices = indices.view(-1, 2)
+            x, target = data       # indices: [[i, j], [i, j], ...]
+            x = x.view(-1, x.shape[2])
+            # indices = indices.view(-1, 2)
             target = target.view(-1)
-            x = embed[indices[:, 0], indices[:, 1]].to(device)
             out = FM(x)
             # Use a Sigmoid to classify
             y_t = torch.sigmoid(out)
@@ -154,17 +155,17 @@ def train_FM(model, embed, train_data, valid_data, epochs=500, lr=1e-4, criterio
 
         # Validation
         if epoch % 10 == 0:
-            loss, prec, recall, ndcg = eval(embed, valid_data, FM, criterion, 20, cuda=cuda)
+            loss, prec, recall, ndcg = eval(valid_data, FM, criterion, 20, cuda=cuda)
             if loss > best_loss:
                 i += 1
-                if i > 5:
+                if i > 3:
                     break
             elif loss < best_loss:
                 best_loss = loss
                 print("saving current model...")
                 # FM.export()
 
-def eval(embed, valid_data, model, criterion, topK, cuda=False):
+def eval(valid_data, model, criterion, topK, cuda=False):
     r"""
     Calculate precision, recall and ndcg of the prediction of the model.
     Returns
@@ -181,11 +182,10 @@ def eval(embed, valid_data, model, criterion, topK, cuda=False):
     recall_list = []
     ndcg_list = []
     for i, data in enumerate(valid_loader):
-        user, items, labels = data
-        user = user.view(-1)
+        x, items, labels = data
+        x = x.view(-1, x.shape[2])
         items = items.view(-1)
         labels = labels.view(-1)
-        x = embed[user, items].to(device)
         out = model(x)
         # Use a Sigmoid to classify
         y_t = torch.sigmoid(out)
@@ -194,6 +194,7 @@ def eval(embed, valid_data, model, criterion, topK, cuda=False):
         y_t = y_t.unsqueeze(1).repeat(1, 2)
         y_t[:, 1] = 1 - y_t[:, 0]
         loss = criterion(y_t, labels)
+
         values, indices = torch.topk(out, topK)
         ranklist = items[indices]
         gtItems = items[torch.nonzero(labels)[:, 0]].tolist()
@@ -257,7 +258,7 @@ if __name__ == "__main__":
     print("time cost: %f" % (gettime() - t0))
 
     t0 = gettime()
-    print("loading features and (make) embeddings...")
+    print("loading features")
 
     if args.cluster:
         # temporary solution
@@ -276,13 +277,6 @@ if __name__ == "__main__":
             businesses = read_pickle(filtered_path+'businesses-complete.pickle')
         n_users = len(users)
         n_items = len(businesses)
-    
-    if not args.MF_train and os.path.exists(feat_path+'embed.pickle'):
-        embed = read_pickle(feat_path+'embed.pickle')
-    else:
-        user_features, item_features = load_feature(feat_path, metapaths)
-        embed = make_embedding(user_features, item_features, cuda=False)    # in this way, we can use embed[uid][bid] to find the embedding of user-item pair
-        write_pickle(feat_path+'embed.pickle', embed)
 
     print("time cost: %f" % (gettime() - t0))
 
@@ -290,20 +284,21 @@ if __name__ == "__main__":
     print("making datasets...")
     business_ids = set(i for i in range(n_items))
     print("n_users:", n_users, "n_items:", n_items)
-    train_dataset = FMG_YelpDataset(train_data, n_users, n_items, neg_sample_n=4, mode='train', cuda=args.cuda)
-    valid_dataset = FMG_YelpDataset(valid_data, n_users, n_items, neg_sample_n=20, mode='valid', cuda=args.cuda)
-    test_dataset = FMG_YelpDataset(test_data, n_users, n_items, neg_sample_n=20, mode='test', cuda=args.cuda)
+    user_features, item_features = load_feature(feat_path, metapaths)
+    train_dataset = FMG_YelpDataset(train_data, user_features, item_features, neg_sample_n=4, mode='train', cuda=args.cuda)
+    valid_dataset = FMG_YelpDataset(valid_data, user_features, item_features, neg_sample_n=20, mode='valid', cuda=args.cuda)
+    test_dataset = FMG_YelpDataset(test_data, user_features, item_features, neg_sample_n=20, mode='test', cuda=args.cuda)
     print("time cost: %f" % (gettime() - t0))
 
     t0 = gettime()
     print("start training FM...")
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = FactorizationMachine(embed.shape[2], 20, cuda=args.cuda).to(device)
+    model = FactorizationMachine(2*len(metapaths)*args.factor, 20, cuda=args.cuda).to(device)
 
-    train_FM(model, embed, train_dataset, valid_dataset, epochs=10, lr=5e-3, cuda=args.cuda)
+    train_FM(model, train_dataset, valid_dataset, epochs=10, lr=5e-3, cuda=args.cuda)
 
     print("time cost: %f" % (gettime() - t0))
 
     # result: loss gets lower as n_neg gets higher
     # Testing
-    eval(embed, test_dataset, model, nn.CrossEntropyLoss(), 20, cuda=args.cuda)
+    eval(test_dataset, model, nn.CrossEntropyLoss(), 20, cuda=args.cuda)
