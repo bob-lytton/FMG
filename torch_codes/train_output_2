@@ -1,0 +1,9 @@
+time cost: 0.000001
+loading data...
+time cost: 0.708838
+loading features
+time cost: 2.033646
+making datasets...
+n_users: 13262 n_items: 13902
+time cost: 6.287383
+start training FM...

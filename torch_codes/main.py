@@ -285,7 +285,7 @@ if __name__ == "__main__":
     business_ids = set(i for i in range(n_items))
     print("n_users:", n_users, "n_items:", n_items)
     user_features, item_features = load_feature(feat_path, metapaths)
-    train_dataset = FMG_YelpDataset(train_data, user_features, item_features, neg_sample_n=4, mode='train', cuda=args.cuda)
+    train_dataset = FMG_YelpDataset(train_data, user_features, item_features, neg_sample_n=5, mode='train', cuda=args.cuda)
     valid_dataset = FMG_YelpDataset(valid_data, user_features, item_features, neg_sample_n=20, mode='valid', cuda=args.cuda)
     test_dataset = FMG_YelpDataset(test_data, user_features, item_features, neg_sample_n=20, mode='test', cuda=args.cuda)
     print("time cost: %f" % (gettime() - t0))
@@ -293,7 +293,7 @@ if __name__ == "__main__":
     t0 = gettime()
     print("start training FM...")
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = FactorizationMachine(2*len(metapaths)*args.factor, 20, cuda=args.cuda).to(device)
+    model = FactorizationMachine(2*len(metapaths)*args.factor, args.K, cuda=args.cuda).to(device)
 
     train_FM(model, train_dataset, valid_dataset, epochs=10, lr=5e-3, cuda=args.cuda)
 
