@@ -397,3 +397,5 @@ epoch 9, loss = 0.479928, lr = 0.005000, time cost = 1802.052134
 time cost: 21361.086863
 ------------------test---------------
 evaluation: loss: 0.540636, precision@20: 0.248067, recall@20: 0.809558, NDCG: 0.606306
+
+negatives=4, fm_factor=30, mf_factor=30
