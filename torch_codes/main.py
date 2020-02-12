@@ -235,10 +235,10 @@ if __name__ == "__main__":
                 adj_path, 
                 feat_path, 
                 n_factor=args.mf_factor,
-                epoch=[10000, 20000, 20000, 20000, 20000], #, 20000, 10000, 50000, 50000], 
-                lr=[5e-3, 5e-3, 5e-3, 5e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3], 
-                reg_user=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
-                reg_item=[5e-1, 5e-1, 5e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
+                epoch=[10000, 50000, 30000, 40000, 20000], #, 20000, 10000, 50000, 50000], 
+                lr=[5e-3, 1e-3, 1e-3, 1e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3], 
+                reg_user=[5e-1, 1e-1, 1e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
+                reg_item=[5e-1, 1e-1, 1e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
                 cuda=args.cuda)
     t1 = gettime()
     print("time cost: %f" % (t1 - t0))
@@ -285,7 +285,7 @@ if __name__ == "__main__":
     business_ids = set(i for i in range(n_items))
     print("n_users:", n_users, "n_items:", n_items)
     user_features, item_features = load_feature(feat_path, metapaths)
-    train_dataset = FMG_YelpDataset(train_data, user_features, item_features, neg_sample_n=5, mode='train', cuda=args.cuda)
+    train_dataset = FMG_YelpDataset(train_data, user_features, item_features, neg_sample_n=args.negatives, mode='train', cuda=args.cuda)
     valid_dataset = FMG_YelpDataset(valid_data, user_features, item_features, neg_sample_n=20, mode='valid', cuda=args.cuda)
     test_dataset = FMG_YelpDataset(test_data, user_features, item_features, neg_sample_n=20, mode='test', cuda=args.cuda)
     print("time cost: %f" % (gettime() - t0))
