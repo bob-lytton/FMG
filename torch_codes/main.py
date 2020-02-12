@@ -154,11 +154,11 @@ def train_FM(model, train_data, valid_data, epochs=500, lr=1e-4, criterion=None,
         print("epoch %d, loss = %f, lr = %f, time cost = %f" % (epoch, loss, lr, gettime() - t0))
 
         # Validation
-        if epoch % 10 == 0:
+        if epoch % 2 == 0:
             loss, prec, recall, ndcg = eval(valid_data, FM, criterion, 20, cuda=cuda)
             if loss > best_loss:
                 i += 1
-                if i > 3:
+                if i > 2:
                     break
             elif loss < best_loss:
                 best_loss = loss
@@ -236,7 +236,7 @@ if __name__ == "__main__":
                 feat_path, 
                 n_factor=args.mf_factor,
                 epoch=[10000, 50000, 30000, 40000, 20000], #, 20000, 10000, 50000, 50000], 
-                lr=[5e-3, 1e-3, 1e-3, 1e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3], 
+                lr=[5e-3, 3e-3, 3e-3, 3e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3], 
                 reg_user=[5e-1, 1e-1, 1e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
                 reg_item=[5e-1, 1e-1, 1e-1, 5e-1, 5e-1], #, 5e-1, 5e-1, 5e-1, 5e-1], 
                 cuda=args.cuda)
@@ -295,7 +295,7 @@ if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = FactorizationMachine(2*len(metapaths)*args.mf_factor, args.fm_factor, cuda=args.cuda).to(device)
 
-    train_FM(model, train_dataset, valid_dataset, epochs=10, lr=5e-3, cuda=args.cuda)
+    train_FM(model, train_dataset, valid_dataset, epochs=6, lr=5e-3, cuda=args.cuda)
 
     print("time cost: %f" % (gettime() - t0))
 
