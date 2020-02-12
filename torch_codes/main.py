@@ -228,6 +228,7 @@ if __name__ == "__main__":
 
     # train MF
     metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB']
+    # metapaths = ['UBUB', 'UUB', 'UBCaB', 'UBCiB']
     # metapaths = ['UB', 'UBUB', 'UUB', 'UBCaB', 'UBCiB', 'UCaB', 'UCiB', 'UCaBCiB', 'UCiBCaB']
     t0 = gettime()
     if args.mf_train:
@@ -303,3 +304,5 @@ if __name__ == "__main__":
     # Testing
     print("------------------test---------------")
     eval(test_dataset, model, nn.CrossEntropyLoss(), 20, cuda=args.cuda)
+    print(model.W)
+    print(model.V)
