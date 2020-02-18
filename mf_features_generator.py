@@ -71,12 +71,12 @@ def run(path_str, comb='', K=10):
     print ('Item-Features: %s  saved in %s, cost %.2f seconds' % (V.shape, wfilename, time.time() - start_time))
 
 def run_all_yelp():
-    # for path_str in ['UPBCaB','UPBCiB', 'UNBCaB', 'UNBCiB']:
-    #     run(path_str)
-    # for path_str in ['UPBUB', 'UNBUB', 'UUPB', 'UUNB']:
-    #     run(path_str)
-    # for path_str in ['UPB', 'UNB']:
-    #     run(path_str)
+    for path_str in ['UPBCaB','UPBCiB', 'UNBCaB', 'UNBCiB']:
+        run(path_str)
+    for path_str in ['UPBUB', 'UNBUB', 'UUPB', 'UUNB']:
+        run(path_str)
+    for path_str in ['UPB', 'UNB']:
+        run(path_str)
     for path_str in ['ratings_only']:
         run(path_str)
 

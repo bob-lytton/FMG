@@ -74,11 +74,6 @@ class FMAKGL(object):
     def get_eval_res(self):
         return self.rmses, self.maes
 
-    def train(self):
-        W = np.random.rand(len(self.train_X), self.K) * self.initial
-        H = np.random.rand(self.item_num, self.K) * self.initial   # N by K
-        self._fm_with_bpr(W, H)
-
     def _get_updated_paras(self, eta, W, P):
         # TODO: modify gradient
         WX, XP, XSPS = self._get_XC_prods(self.train_X, W, P)
@@ -132,21 +127,3 @@ class FMAKGL(object):
         np.savetxt(P_wfilename, P)
         logging.info('W and P saved in %s and %s', W_wfilename, P_wfilename)
         
-    def _sample(self, n_users, n_items, indices, indptr):
-        """
-        sample batches of random triplets (u, i, j)
-        """
-        sampled_pos_items = np.zeros(self.bsz, dtype=np.int)
-        sampled_neg_items = np.zeros(self.bsz, dtype=np.int)
-        sampled_users = np.random.choice(n_users, size=self.bsz, replace=False)
-
-        for idx, user in enumerate(sampled_users):
-            pos_items = indices[indptr[user]: indptr[user+1]]
-            pos_item = np.random.choice(pos_items)  # single value
-            neg_item = np.random.choice(n_items)    # single value
-            while neg_item in pos_items:
-                neg_item = np.random.choice(n_items)
-
-            sampled_pos_items[idx] = pos_item
-            sampled_neg_items[idx] = neg_item
-        return sampled_users, sampled_pos_items, sampled_neg_items

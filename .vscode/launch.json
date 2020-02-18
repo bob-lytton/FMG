@@ -35,7 +35,10 @@
             "program": "${workspaceFolder}/torch_codes/main.py",
             "console": "integratedTerminal"
             "args": [
-                "--toy=True",
+                "--toy",
+                "--data_path=../yelp_dataset/",
+                "--mf-factor=20",
+                "--mf-train",
             ]
         },
         {

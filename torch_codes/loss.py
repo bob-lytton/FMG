@@ -7,10 +7,14 @@ from torch import nn, norm
 
 
 class MFLoss(nn.Module):
-    def __init__(self, reg_user, reg_item):
+    def __init__(self, reg_user, reg_item, omega):
         super(MFLoss, self).__init__()
         self.reg_user = reg_user / 2.0
         self.reg_item = reg_item / 2.0
+        self.omega = omega
+
+    def _P_omega(self, data):
+        return data * self.omega
 
     def forward(self, user_mat, item_mat, adj_predicted, adj):
         r"""
@@ -24,7 +28,8 @@ class MFLoss(nn.Module):
 
         adj: torch.Tensor
         """
-        return 0.5 * norm(adj_predicted - adj, p='fro') + \
+
+        return 0.5 * norm(_P_omega(adj_predicted - adj), p='fro') + \
             self.reg_user * norm(user_mat, p='fro') + \
             self.reg_item * norm(item_mat, p='fro')
 

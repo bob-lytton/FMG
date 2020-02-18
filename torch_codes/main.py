@@ -21,31 +21,22 @@ def parse_args():
     parse.add_argument('--dataset', default='yelp', help='Choose a dataset.')
     parse.add_argument('--epochs', type=int, default=500)
     parse.add_argument('--data_path', type=str, default='/home1/wyf/Projects/gnn4rec/multi-embedding-HAN/yelp_dataset/')
-    parse.add_argument('--write_path', type=str, default='/home1/wyf/Projects/gnn4rec/multi-embedding-HAN/FMG/tmp/')
+    parse.add_argument('--write_path', type=str, default='../yelp_dataset/')
     parse.add_argument('--negatives', type=int, default=4)
     parse.add_argument('--batch_size', type=int, default=64)
-    # parse.add_argument('--batch_size', type=int, default=64)
-    # parse.add_argument('--dim', type=int, default=100)
-    # parse.add_argument('--sample', type=int, default=64)
     parse.add_argument('--cuda', type=bool, default=True)
-    # parse.add_argument('--lr', type=float, default=0.0001)
-    # parse.add_argument('--decay_step', type=int, default=5)
-    # parse.add_argument('--log_step', type=int, default=1e2)
-    # parse.add_argument('--decay', type=float, default=0.95, help='learning rate decay rate')
-    # parse.add_argument('--save', type=str, default='model/bigdata_modelpara1_dropout0.5.pth')
-    parse.add_argument('--fm-factor', type=int, default=10)
     parse.add_argument('--mode', type=str, default='train')
     parse.add_argument('--mf_log_step', type=int, default=1e2)
     parse.add_argument('--fm_log_step', type=int, default=1e2)
-    # parse.add_argument('--load', type=bool, default=False)
-    # parse.add_argument('--patience', type=int, default=10)
-    # parse.add_argument('--cluster', action='store_true', default=False, help="Run the program on cluster or PC")
-    # parse.add_argument('--toy', action='store_true', default=False, help="Toy dataset for debugging")
-    parse.add_argument('--mf-train', action='store_true', default=True, help="Run Matrix Factorization training")
+    parse.add_argument('--cluster', action='store_true', help="Run the program on cluster or PC")
+    parse.add_argument('--toy', action='store_true', help="Toy dataset for debugging")
+    parse.add_argument('--mf-train', action='store_true', help="Run Matrix Factorization training")
+    parse.add_argument('--fm-factor', type=int, default=10)
     parse.add_argument('--mf-factor', type=int, default=10, help="n_factor for MF")
     parse.add_argument('--mf_patience', type=int, default=100)
     parse.add_argument('--fm_patience', type=int, default=10)
     parse.add_argument('--save', type=str, default='../tmp/modelpara.pth')
+    parse.add_argument('--num-workers', type=int, default=1)
 
     return parse.parse_args()
 
@@ -53,30 +44,52 @@ def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
-def train_MF(metapaths, loadpath, ratepath, savepath, n_factor, reg_user, reg_item, lr, epoch, decay_step, decay, dataset, patience, log_step, cuda):
+def train_MF(metapaths, loadpath, ratepath, savepath, train_omega, valid_omega, n_factor, reg_user, reg_item, lr, epoch, decay_step, decay, dataset, patience, log_step, cuda):
     if dataset == 'yelp':
         num_to_ids = []
         num_to_id_paths = []
-        num_to_id_names = ['num_to_userid', 'num_to_businessid', 'num_to_cityid', 'num_to_categoryid']
+        num_to_id_names = []
+        if args.cluster:
+            num_to_id_names = ['num_to_userid', 'num_to_businessid', 'num_to_cityid', 'num_to_categoryid']
+        else:
+            num_to_id_names = ['ind2uid.pickle', 'ind2bid.pickle', 'ind2ct_id.pickle', 'ind2ca_id.pickle']
+
         for name in num_to_id_names:
             num_to_id_paths.append(loadpath + name)
         for path in num_to_id_paths:
             num_to_ids.append(read_pickle(path))
         n_type = [len(num_to_id) for num_to_id in num_to_ids]
-        valid_with_neg = read_pickle(ratepath+'valid_with_neg')
+
+        if args.cluster:
+            valid_with_neg = read_pickle(ratepath+'valid_with_neg')
+        else:
+            valid_with_neg = read_pickle(ratepath+'valid_with_neg_sample.pickle')
+
         adj_UB_valid = np.zeros([n_type[0], n_type[1]])
         for valid in valid_with_neg:
             user = valid['user_id']
             pos_items = valid['pos_business_id']
             adj_UB_valid[user, pos_items] = 1
-        adj_UB = read_pickle(loadpath + 'adj_UB')
-        adj_UU = read_pickle(loadpath + 'adj_UU')
-        adj_BCi = read_pickle(loadpath + 'adj_BCi')
-        adj_BCa = read_pickle(loadpath + 'adj_BCa')
-        adj_UUB = read_pickle(loadpath + 'adj_UUB')
-        adj_UBUB = read_pickle(loadpath + 'adj_UBUB')
-        adj_UBCiB = read_pickle(loadpath + 'adj_UBCiB')
-        adj_UBCaB = read_pickle(loadpath + 'adj_UBCaB')
+
+        if args.cluster:
+            adj_UB = read_pickle(loadpath + 'adj_UB')
+            adj_UU = read_pickle(loadpath + 'adj_UU')
+            adj_BCi = read_pickle(loadpath + 'adj_BCi')
+            adj_BCa = read_pickle(loadpath + 'adj_BCa')
+            adj_UUB = read_pickle(loadpath + 'adj_UUB')
+            adj_UBUB = read_pickle(loadpath + 'adj_UBUB')
+            adj_UBCiB = read_pickle(loadpath + 'adj_UBCiB')
+            adj_UBCaB = read_pickle(loadpath + 'adj_UBCaB')
+        else:
+            adj_UB = read_pickle(loadpath + 'adj_UB.pickle')
+            adj_UU = read_pickle(loadpath + 'adj_UU.pickle')
+            adj_BCi = read_pickle(loadpath + 'adj_BCi.pickle')
+            adj_BCa = read_pickle(loadpath + 'adj_BCa.pickle')
+            adj_UUB = read_pickle(loadpath + 'adj_UUB.pickle')
+            adj_UBUB = read_pickle(loadpath + 'adj_UBUB.pickle')
+            adj_UBCiB = read_pickle(loadpath + 'adj_UBCiB.pickle')
+            adj_UBCaB = read_pickle(loadpath + 'adj_UBCaB.pickle')
+            
         adj_UB_valid = adj_UB + adj_UB_valid
         adj_UUB_valid = adj_UU.dot(adj_UB_valid)
         adj_UBUB_valid = adj_UB_valid.dot(adj_UB_valid.T).dot(adj_UB_valid)
@@ -105,17 +118,20 @@ def train_MF(metapaths, loadpath, ratepath, savepath, n_factor, reg_user, reg_it
     i = 0
     for metapath in metapaths:
         # instance the MF trainer
-        MFTrainer(metapath, adj_list[i], adj_valid_list[i], savepath, n_factor, epoch[i], lr=lr[i], reg_user=reg_user[i], reg_item=reg_item[i], decay_step=decay_step, decay=decay, patience=patience, log_step=log_step, cuda=cuda)
+        MFTrainer(metapath, adj_list[i], adj_valid_list[i], savepath, train_omega, valid_omega, n_factor, epoch[i], lr=lr[i], reg_user=reg_user[i], reg_item=reg_item[i], decay_step=decay_step, decay=decay, patience=patience, log_step=log_step, cuda=cuda)
         i += 1
 
-def MFTrainer(metapath, adj_mat, adj_valid_mat, savepath, n_factor, epochs, lr, reg_user, reg_item, decay_step, decay, patience, log_step, cuda):
+def MFTrainer(metapath, adj_mat, adj_valid_mat, savepath, train_omega, valid_omega, n_factor, epochs, lr, reg_user, reg_item, decay_step, decay, patience, log_step, cuda):
     device = torch.device('cuda' if cuda else 'cpu')
     n_user = adj_mat.shape[0]
     n_item = adj_mat.shape[1]
     adj_mat = torch.tensor(adj_mat, dtype=torch.float32, requires_grad=False).to(device)
     adj_valid_mat = torch.tensor(adj_valid_mat, dtype=torch.float32, requires_grad=False).to(device)
     mf = MatrixFactorizer(n_user, n_item, n_factor, cuda).to(device)
-    criterion = MFLoss(reg_user, reg_item)
+
+    train_criterion = MFLoss(reg_user, reg_item, train_omega)
+    train_criterion = MFLoss(reg_user, reg_item, valid_omega)
+
     optimizer = torch.optim.Adam([mf.user_factors, mf.item_factors], lr=lr, weight_decay=0.000001)  # use weight_decay
     # optimizer = torch.optim.Adam(mf.parameters(), lr=lr, weight_decay=0.000001)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=decay_step, gamma=decay)
@@ -137,7 +153,7 @@ def MFTrainer(metapath, adj_mat, adj_valid_mat, savepath, n_factor, epochs, lr, 
         model.train()
         optimizer.zero_grad()
         adj_t = model()
-        loss = criterion(model.user_factors, model.item_factors, adj_t, adj_mat)  # this line is ugly
+        loss = train_criterion(model.user_factors, model.item_factors, adj_t, adj_mat)  # this line is ugly
         loss.backward()
         optimizer.step()
         # print("metapath: %s, epoch %d: loss = %.4f, lr = %.10f, reg_user = %f, reg_item = %f"
@@ -148,7 +164,7 @@ def MFTrainer(metapath, adj_mat, adj_valid_mat, savepath, n_factor, epochs, lr, 
         # print('Valid')
         model.eval()
         adj_t = model()
-        loss = criterion(model.user_factors, model.item_factors, adj_t, adj_valid_mat)  # this line is ugly
+        loss = valid_criterion(model.user_factors, model.item_factors, adj_t, adj_valid_mat)  # this line is ugly
         # print('metapath: %s, valid loss: %.4f'%(metapath, loss.item()))
         return loss.item()
 
@@ -221,12 +237,14 @@ def train_FM(model, train_data, valid_data, epochs, lr, batch_size, decay_step, 
         Default is nn.CrossEntropyLoss
     """
     device = torch.device('cuda' if cuda else 'cpu')
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=20, pin_memory=True)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
     # FM = model
 
     # if not criterion:
     # criterion = nn.CrossEntropyLoss()
     criterion = nn.BCELoss(reduction = 'none').to(device)
+
+    cross_entropy = nn.CrossEntropyLoss().to(device)
     # criterion.to(device)
 
     # validation and training interruption
@@ -243,9 +261,13 @@ def train_FM(model, train_data, valid_data, epochs, lr, batch_size, decay_step, 
         # t0 = gettime()
         for step, data in enumerate(train_loader):
             optimizer.zero_grad()
-            x, target = data       # indices: [[i, j], [i, j], ...]
+            x, y = data       # indices: [[i, j], [i, j], ...]
             x = x.to(device)
-            target = target.to(device).float()
+            target = y.to(device).float()
+            y = y.to(device).long()
+
+            y = y.view(-1)
+
             # batchsize, neg, dim = x.shape
             # x = x.view(-1, dim)
             # indices = indices.view(-1, 2)
@@ -253,9 +275,12 @@ def train_FM(model, train_data, valid_data, epochs, lr, batch_size, decay_step, 
             out = model(x)
             # Use a Sigmoid to classify
             # y_t = torch.sigmoid(out)
-            # y_t = out.clone()
+            y_t = out.clone()
             # y_t = out.unsqueeze(1).repeat(1, 2)
-            # y_t[:, 1] = 1 - y_t[:, 0]
+            y_t = out.view(-1, 1).repeat(1, 2)
+            y_t[:, 1] = 1 - y_t[:, 0]
+            cross_entropy_loss = cross_entropy(y_t, y)
+
             out = out.squeeze(-1)
             # print(out)
             # print(criterion(out, target))
@@ -350,19 +375,65 @@ if __name__ == "__main__":
     args = parse_args()
     adj_path = args.data_path + 'adjs/'
     rate_path = args.data_path + 'rates/'
-    feat_path = args.write_path + args.dataset + '_mf_features/'
+    feat_path = args.write_path + 'mf_features/'
+    filtered_path = args.data_path + 'filtered/'
     # train MF
     metapaths = ['UB', 'UUB', 'UBUB', 'UBCiB', 'UBCaB']
+
+    t0 = gettime()
+    print("loading mf data...")
+    # Do we need negative samples? Yes!
+    if args.cluster:
+        train_data = read_pickle(rate_path+'rate_train')
+        valid_data = read_pickle(rate_path+'valid_with_neg')
+        test_data = read_pickle(rate_path+'test_with_neg')
+    else:
+        train_data = read_pickle(rate_path+'train_data.pickle')
+        valid_data = read_pickle(rate_path+'valid_with_neg_sample.pickle')
+        test_data = read_pickle(rate_path+'test_with_neg_sample.pickle')
+    print("time cost: %f" % (gettime() - t0))
+
+    t0 = gettime()
+    print("loading features")
+    if args.cluster:
+        # temporary solution
+        adj_UB = read_pickle(adj_path+'adj_UB')
+        n_users = adj_UB.shape[0]
+        n_items = adj_UB.shape[1]
+        del adj_UB
+
+    else:
+        if args.toy:
+            # small dataset
+            users = read_pickle(filtered_path+'users-small.pickle')
+            businesses = read_pickle(filtered_path+'businesses-small.pickle')
+        else:
+            # full dataset
+            users = read_pickle(filtered_path+'users-complete.pickle')
+            businesses = read_pickle(filtered_path+'businesses-complete.pickle')
+
+        n_users = len(users)
+        n_items = len(businesses)
+
+    print("time cost: %f" % (gettime() - t0))
+
+    train_omega = make_omega(train_data, n_users, n_items, mode='train')
+    valid_omega = make_omega(valid_data, n_users, n_items, mode='valid')
+
     if args.mf_train:
         train_MF(metapaths, 
                 adj_path,
                 rate_path,
                 feat_path, 
+                train_omega,
+                valid_omega,
                 n_factor=args.mf_factor,
                 lr=[5e-3, 5e-3, 5e-3, 5e-3, 5e-3], #, 5e-3, 5e-3, 7e-3, 7e-3],
-                reg_user=[1e-1, 1e-1, 1e-1, 1e-1, 1e-1], #, 5e-1, 5e-1, 5e-1, 5e-1],
-                reg_item=[1e-1, 1e-1, 1e-1, 1e-1, 1e-1], #, 5e-1, 5e-1, 5e-1, 5e-1],
-                epoch=[50000, 50000, 50000, 50000, 50000], #, 20000, 10000, 50000, 50000],
+                # reg_user=[1e-1, 1e-1, 1e-1, 1e-1, 1e-1], #, 5e-1, 5e-1, 5e-1, 5e-1],
+                # reg_item=[1e-1, 1e-1, 1e-1, 1e-1, 1e-1], #, 5e-1, 5e-1, 5e-1, 5e-1],
+                reg_user=[1e1, 1e1, 1e1, 1e1, 1e1],
+                reg_item=[1e1, 1e1, 1e1, 1e1, 1e1],
+                epoch=[10000, 10000, 10000, 10000, 10000], #, 20000, 10000, 50000, 50000],
                 decay_step=100,
                 decay=0.95,
                 dataset=args.dataset,
@@ -371,46 +442,11 @@ if __name__ == "__main__":
                 cuda=args.cuda)
 
     # train FM (cross entropy loss)
-    # t0 = gettime()
-    print("loading mf data...")
-    # Do we need negative samples? Yes!
-    # if args.cluster:
-    train_data = read_pickle(rate_path+'rate_train')
-    valid_data = read_pickle(rate_path+'valid_with_neg')
-    test_data = read_pickle(rate_path+'test_with_neg')
-    # else:
-    #     train_data = read_pickle(rate_path+'train_data.pickle')
-    #     valid_data = read_pickle(rate_path+'valid_with_neg_sample.pickle')
-    #     test_data = read_pickle(rate_path+'test_with_neg_sample.pickle')
-    # print("time cost: %f" % (gettime() - t0))
 
-    # t0 = gettime()
-    # print("loading features")
-
-    # if args.cluster:
-    #     temporary solution
-        # adj_UB = read_pickle(adj_path+'adj_UB')
-        # n_users = adj_UB.shape[0]
-        # n_items = adj_UB.shape[1]
-        # del adj_UB
-    # else:
-    #     if args.toy:
-    #         small dataset
-            # users = read_pickle(filtered_path+'users-small.pickle')
-            # businesses = read_pickle(filtered_path+'businesses-small.pickle')
-        # else:
-        #     full dataset
-            # users = read_pickle(filtered_path+'users-complete.pickle')
-            # businesses = read_pickle(filtered_path+'businesses-complete.pickle')
-        # n_users = len(users)
-        # n_items = len(businesses)
-    #
-    # print("time cost: %f" % (gettime() - t0))
-
-    # t0 = gettime()
-    # print("making datasets...")
+    t0 = gettime()
+    print("making datasets...")
     # business_ids = set(i for i in range(n_items))
-    # print("n_users:", n_users, "n_items:", n_items)
+    print("n_users:", n_users, "n_items:", n_items)
     user_features, item_features = load_feature(feat_path, metapaths)
     train_dataset = FMG_YelpDataset(train_data, user_features, item_features, neg_sample_n=args.negatives, mode='train', cuda=args.cuda)
     valid_dataset = FMG_YelpDataset(valid_data, user_features, item_features, neg_sample_n=20, mode='valid', cuda=args.cuda)
@@ -424,7 +460,7 @@ if __name__ == "__main__":
 
     train_FM(model, train_dataset, valid_dataset, epochs=600, lr=5e-3, batch_size=args.batch_size, decay_step=1, decay=0.95, patience=args.fm_patience, save=args.save, log_step=args.fm_log_step, cuda=args.cuda)
 
-    # print("time cost: %f" % (gettime() - t0))
+    print("time cost: %f" % (gettime() - t0))
 
     # result: loss gets lower as n_neg gets higher
     # Testing

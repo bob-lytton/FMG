@@ -20,5 +20,27 @@ def load_feature(feature_path, metapaths):
     item_features = [read_pickle(feature_path+metapath+'_item.pickle') for metapath in metapaths]
     return user_features, item_features
 
+def make_omega(origin_data, n_users, n_items, mode):
+    r"""
+    Parameters
+    ----------
+    origin_data: list of dict
+
+    mode: 'train' or 'valid'
+
+    Return
+    ------
+    omega: np.ndarray
+    """
+    omega = np.zeros([n_users, n_items])
+    if mode == 'train':
+        for d in origin_data:
+            omega[d['user_id']][d['business_id']] = d['rate']
+    
+    elif mode == 'valid':
+        for d in origin_data:
+            for bid in d['pos_business_id']:
+                omega[d['user_id']][bid] = 1.0
+
 if __name__ == "__main__":
     pass
