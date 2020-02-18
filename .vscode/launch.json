@@ -33,7 +33,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/torch_codes/main.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
             "args": [
                 "--toy",
                 "--data_path=../yelp_dataset/",

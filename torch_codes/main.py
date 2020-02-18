@@ -89,7 +89,7 @@ def train_MF(metapaths, loadpath, ratepath, savepath, train_omega, valid_omega, 
             adj_UBUB = read_pickle(loadpath + 'adj_UBUB.pickle')
             adj_UBCiB = read_pickle(loadpath + 'adj_UBCiB.pickle')
             adj_UBCaB = read_pickle(loadpath + 'adj_UBCaB.pickle')
-            
+
         adj_UB_valid = adj_UB + adj_UB_valid
         adj_UUB_valid = adj_UU.dot(adj_UB_valid)
         adj_UBUB_valid = adj_UB_valid.dot(adj_UB_valid.T).dot(adj_UB_valid)
@@ -129,8 +129,8 @@ def MFTrainer(metapath, adj_mat, adj_valid_mat, savepath, train_omega, valid_ome
     adj_valid_mat = torch.tensor(adj_valid_mat, dtype=torch.float32, requires_grad=False).to(device)
     mf = MatrixFactorizer(n_user, n_item, n_factor, cuda).to(device)
 
-    train_criterion = MFLoss(reg_user, reg_item, train_omega)
-    train_criterion = MFLoss(reg_user, reg_item, valid_omega)
+    train_criterion = MFLoss(reg_user, reg_item, train_omega, cuda=args.cuda)
+    train_criterion = MFLoss(reg_user, reg_item, valid_omega, cuda=args.cuda)
 
     optimizer = torch.optim.Adam([mf.user_factors, mf.item_factors], lr=lr, weight_decay=0.000001)  # use weight_decay
     # optimizer = torch.optim.Adam(mf.parameters(), lr=lr, weight_decay=0.000001)

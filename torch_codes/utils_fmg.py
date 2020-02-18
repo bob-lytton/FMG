@@ -42,5 +42,7 @@ def make_omega(origin_data, n_users, n_items, mode):
             for bid in d['pos_business_id']:
                 omega[d['user_id']][bid] = 1.0
 
+    return omega
+
 if __name__ == "__main__":
     pass

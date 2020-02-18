@@ -1,5 +1,5 @@
-# import numpy as np
-# import torch
+import numpy as np
+import torch
 # import torch.nn.functional as F
 from torch import nn, norm
 
@@ -7,11 +7,12 @@ from torch import nn, norm
 
 
 class MFLoss(nn.Module):
-    def __init__(self, reg_user, reg_item, omega):
+    def __init__(self, reg_user, reg_item, omega, cuda=True):
         super(MFLoss, self).__init__()
+        device = torch.device('cuda:0' if cuda else 'cpu')
         self.reg_user = reg_user / 2.0
         self.reg_item = reg_item / 2.0
-        self.omega = omega
+        self.omega = torch.tensor(omega).to(device)
 
     def _P_omega(self, data):
         return data * self.omega
