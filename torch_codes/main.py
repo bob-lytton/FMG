@@ -130,7 +130,7 @@ def MFTrainer(metapath, adj_mat, adj_valid_mat, savepath, train_omega, valid_ome
     mf = MatrixFactorizer(n_user, n_item, n_factor, cuda).to(device)
 
     train_criterion = MFLoss(reg_user, reg_item, train_omega, cuda=args.cuda)
-    train_criterion = MFLoss(reg_user, reg_item, valid_omega, cuda=args.cuda)
+    valid_criterion = MFLoss(reg_user, reg_item, valid_omega, cuda=args.cuda)
 
     optimizer = torch.optim.Adam([mf.user_factors, mf.item_factors], lr=lr, weight_decay=0.000001)  # use weight_decay
     # optimizer = torch.optim.Adam(mf.parameters(), lr=lr, weight_decay=0.000001)
