@@ -264,9 +264,9 @@ def train_FM(model, train_data, valid_data, epochs, lr, batch_size, decay_step, 
             x, y = data       # indices: [[i, j], [i, j], ...]
             x = x.to(device)
             target = y.to(device).float()
-            y = y.to(device).long()
+            # y = y.to(device).long()
 
-            y = y.view(-1)
+            # y = y.view(-1)
 
             # batchsize, neg, dim = x.shape
             # x = x.view(-1, dim)
@@ -275,11 +275,11 @@ def train_FM(model, train_data, valid_data, epochs, lr, batch_size, decay_step, 
             out = model(x)
             # Use a Sigmoid to classify
             # y_t = torch.sigmoid(out)
-            y_t = out.clone()
+            # y_t = out.clone()
             # y_t = out.unsqueeze(1).repeat(1, 2)
-            y_t = out.view(-1, 1).repeat(1, 2)
-            y_t[:, 1] = 1 - y_t[:, 0]
-            cross_entropy_loss = cross_entropy(y_t, y)
+            # y_t = out.view(-1, 1).repeat(1, 2)
+            # y_t[:, 1] = 1 - y_t[:, 0]
+            # cross_entropy_loss = cross_entropy(y_t, y)
 
             out = out.squeeze(-1)
             # print(out)
